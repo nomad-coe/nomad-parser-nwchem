@@ -7,7 +7,7 @@ import os.path
 
 baseDir = os.path.dirname(os.path.abspath(__file__))
 commonDir = os.path.normpath(os.path.join(baseDir, "../../../../../python-common/common/python"))
-parserDir = os.path.normpath(os.path.join(baseDir, "../../parser-cpmd"))
+parserDir = os.path.normpath(os.path.join(baseDir, "../../parser-nwchem"))
 
 # Using sys.path.insert(1, ...) instead of sys.path.insert(0, ...) based on
 # this discusssion:
