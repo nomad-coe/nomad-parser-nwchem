@@ -55,10 +55,12 @@ folder *nwchem/test/unittests*. Here is an example of the call syntax:
 To install this standalone version, you need to clone the repositories
 "python-common", "nomad-meta-info", and "parser-nwchem" into the same folder.
 Then install the python-common according to the instructions found in the
-README. After that, you can install this package by running:
+README. After that, you can install this package by running either of the
+following two commands depending on your python version:
 
 ```sh
 python setup.py develop --user
+python3 setup.py develop --user
 ```
 
 # Tools and Methods

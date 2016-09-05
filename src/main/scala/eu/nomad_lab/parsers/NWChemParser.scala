@@ -9,12 +9,12 @@ object NWChemParser extends SimpleExternalParserGenerator(
   name = "NWChemParser",
   parserInfo = jn.JObject(
     ("name" -> jn.JString("NWChemParser")) ::
-      ("parserId" -> jn.JString("NWChemParser" + lab.NWChemVersionInfo.version)) ::
+      ("parserId" -> jn.JString("NWChemParser" + lab.NwchemVersionInfo.version)) ::
       ("versionInfo" -> jn.JObject(
         ("nomadCoreVersion" -> jn.JObject(lab.NomadCoreVersionInfo.toMap.map {
           case (k, v) => k -> jn.JString(v.toString)
         }(breakOut): List[(String, jn.JString)])) ::
-          (lab.NWChemVersionInfo.toMap.map {
+          (lab.NwchemVersionInfo.toMap.map {
             case (key, value) =>
               (key -> jn.JString(value.toString))
           }(breakOut): List[(String, jn.JString)])
