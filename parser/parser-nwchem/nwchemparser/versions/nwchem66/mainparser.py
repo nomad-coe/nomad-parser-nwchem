@@ -166,12 +166,6 @@ class NWChemMainParser(MainHierarchicalParser):
         return SM( "                                 NWChem DFT Module",
             forwardMatch=True,
             sections=["section_single_configuration_calculation", "section_system", "section_method", "x_nwchem_section_dft_energy_force_task"],
-            # onClose={
-                # "section_single_configuration_calculation": self.close_energy_force_single_configuration_calculation()
-            # },
-            # onOpen={
-                # "section_system": self.open_energy_force_section_system()
-            # },
             subMatchers=[
                 self.dft_module(dft_on_close=self.save_dft_data(), scf_on_close=self.save_scf_data(), force_on_close=self.save_force_data()),
             ],
