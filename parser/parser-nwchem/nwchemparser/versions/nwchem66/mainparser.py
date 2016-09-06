@@ -10,7 +10,7 @@ LOGGER = logging.getLogger("nomad")
 
 #===============================================================================
 class NWChemMainParser(MainHierarchicalParser):
-    """The main parser class that is called for all run types. Parses the CPMD
+    """The main parser class that is called for all run types. Parses the NWChem
     output file.
     """
     def __init__(self, file_path, parser_context):
@@ -22,6 +22,8 @@ class NWChemMainParser(MainHierarchicalParser):
         self.frame_sequence_local_frames_ref = []
         self.method_index = None
         self.system_index = None
+        self.electronic_structure_method = None
+        self.save_method = False
 
         #=======================================================================
         # Cache levels
@@ -239,7 +241,10 @@ class NWChemMainParser(MainHierarchicalParser):
         backend.addValue("single_configuration_calculation_to_system_ref", self.system_index)
 
     def onClose_x_nwchem_section_dft(self, backend, gIndex, section):
-        backend.addValue("electronic_structure_method", "DFT")
+        self.electronic_structure_method = "DFT"
+
+    def onClose_section_method(self, backend, gIndex, section):
+        backend.addValue("electronic_structure_method", self.electronic_structure_method)
 
     def onClose_x_nwchem_section_geo_opt_task(self, backend, gIndex, section):
         steps = section["x_nwchem_section_geo_opt_step"]
@@ -268,6 +273,7 @@ class NWChemMainParser(MainHierarchicalParser):
     # onOpen triggers
     def onOpen_section_method(self, backend, gIndex, section):
         self.method_index = gIndex
+        self.save_method = True
 
     #=======================================================================
     # adHoc
@@ -343,12 +349,24 @@ class NWChemMainParser(MainHierarchicalParser):
             section.add_latest_value("x_nwchem_dft_energy_total", "energy_total")
             section.add_latest_value("x_nwchem_dft_energy_X", "energy_X")
             section.add_latest_value("x_nwchem_dft_energy_C", "energy_C")
-            section.add_latest_value("x_nwchem_dft_spin_multiplicity", "spin_target_multiplicity")
+            # section.add_latest_value("x_nwchem_dft_spin_multiplicity", "spin_target_multiplicity")
             section.add_latest_value("x_nwchem_dft_number_of_atoms", "number_of_atoms")
-            section.add_latest_value("x_nwchem_dft_total_charge", "total_charge")
-            section.add_latest_value("x_nwchem_dft_max_iteration", "scf_max_iteration")
-            section.add_latest_value("x_nwchem_dft_scf_threshold_energy_change", "scf_threshold_energy_change")
+            # section.add_latest_value("x_nwchem_dft_total_charge", "total_charge")
+            # section.add_latest_value("x_nwchem_dft_max_iteration", "scf_max_iteration")
+            # section.add_latest_value("x_nwchem_dft_scf_threshold_energy_change", "scf_threshold_energy_change")
             backend.addValue("number_of_scf_iterations", self.n_scf_iterations)
+
+            # If a geo opt has just been started, save the general settings
+            if self.save_method:
+                section.add_latest_value("x_nwchem_dft_spin_multiplicity", "spin_target_multiplicity")
+                section.add_latest_value("x_nwchem_dft_total_charge", "total_charge")
+                section.add_latest_value("x_nwchem_dft_max_iteration", "scf_max_iteration")
+                section.add_latest_value("x_nwchem_dft_scf_threshold_energy_change", "scf_threshold_energy_change")
+
+                self.save_method = False
+            # print(multiplicity)
+            # print(energy_total)
+
             self.n_scf_iterations = 0
         return wrapper
 
@@ -380,4 +398,9 @@ class NWChemMainParser(MainHierarchicalParser):
         def wrapper(backend, gIndex, section):
             backend.addArrayValues("frame_sequence_local_frames_ref", np.array(self.frame_sequence_local_frames_ref))
             self.frame_sequence_local_frames_ref = []
+        return wrapper
+
+    def save_method(self):
+        def wrapper(backend, gIndex, section):
+            self.save_method = True
         return wrapper

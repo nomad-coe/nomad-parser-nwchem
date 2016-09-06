@@ -138,7 +138,7 @@ class TestDFTEnergy(unittest.TestCase):
         result = self.results["number_of_scf_iterations"]
         self.assertEqual(result, 6)
 
-    def test_target_multiplicity(self):
+    def test_spin_target_multiplicity(self):
         multiplicity = self.results["spin_target_multiplicity"]
         self.assertEqual(multiplicity, 1)
 
@@ -146,9 +146,9 @@ class TestDFTEnergy(unittest.TestCase):
         result = self.results["single_configuration_to_calculation_method_ref"]
         self.assertEqual(result, 0)
 
-    # def test_single_configuration_calculation_to_system_description_ref(self):
-        # result = self.results["single_configuration_calculation_to_system_ref"]
-        # self.assertEqual(result, 0)
+    def test_single_configuration_calculation_to_system_description_ref(self):
+        result = self.results["single_configuration_calculation_to_system_ref"]
+        self.assertEqual(result, 0)
 
     # def test_single_configuration_calculation_converged(self):
         # result = self.results["single_configuration_calculation_converged"]
@@ -260,7 +260,8 @@ class TestDFTGeoOpt(unittest.TestCase):
         self.assertEqual(n_frames, 4)
 
         # Potential energy
-        pot_ener = sequence["frame_sequence_potential_energy"][0]
+        pot_ener = sequence["frame_sequence_potential_energy"]
+        # print(pot_ener)
         expected_pot_ener = convert_unit(
             np.array([
                 -76.42941861,
@@ -1053,9 +1054,9 @@ class TestDFTGeoOpt(unittest.TestCase):
 #===============================================================================
 if __name__ == '__main__':
     suites = []
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTEnergy))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTEnergy))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTForce))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGeoOpt))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGeoOpt))
 
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestGeoOpt))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestInputParser))
