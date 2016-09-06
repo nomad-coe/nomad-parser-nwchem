@@ -1053,9 +1053,9 @@ class TestDFTGeoOpt(unittest.TestCase):
 #===============================================================================
 if __name__ == '__main__':
     suites = []
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTEnergy))
+    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTEnergy))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTForce))
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGeoOpt))
+    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGeoOpt))
 
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestGeoOpt))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestInputParser))

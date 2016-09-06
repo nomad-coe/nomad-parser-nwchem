@@ -247,10 +247,6 @@ class NWChemMainParser(MainHierarchicalParser):
     def onClose_x_nwchem_section_dft(self, backend, gIndex, section):
         backend.addValue("electronic_structure_method", "DFT")
 
-    def onClose_x_nwchem_section_dft_scf(self, backend, gIndex, section):
-        backend.addValue("number_of_scf_iterations", self.n_scf_iterations)
-        self.n_scf_iterations = 0
-
     def onClose_x_nwchem_section_geo_opt_task(self, backend, gIndex, section):
         steps = section["x_nwchem_section_geo_opt_step"]
         if steps:
@@ -358,6 +354,8 @@ class NWChemMainParser(MainHierarchicalParser):
             section.add_latest_value("x_nwchem_dft_total_charge", "total_charge")
             section.add_latest_value("x_nwchem_dft_max_iteration", "scf_max_iteration")
             section.add_latest_value("x_nwchem_dft_scf_threshold_energy_change", "scf_threshold_energy_change")
+            backend.addValue("number_of_scf_iterations", self.n_scf_iterations)
+            self.n_scf_iterations = 0
         return wrapper
 
     def save_scf_data(self):

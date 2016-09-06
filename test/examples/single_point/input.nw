@@ -15,4 +15,4 @@ dft
  xc xtpss03 ctpss03
  decomp
 end
-task dft energy
+task dft gradient
