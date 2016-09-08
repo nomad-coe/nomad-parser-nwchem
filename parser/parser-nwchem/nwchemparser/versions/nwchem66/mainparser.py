@@ -30,6 +30,7 @@ class NWChemMainParser(MainHierarchicalParser):
         self.caching_levels.update({
             'x_nwchem_section_geo_opt_task': CachingLevel.Cache,
             'x_nwchem_section_geo_opt_step': CachingLevel.Cache,
+            'x_nwchem_section_xc_functional': CachingLevel.Cache,
         })
 
         #=======================================================================
@@ -117,7 +118,13 @@ class NWChemMainParser(MainHierarchicalParser):
                 SM( r"          Convergence on density requested:\s+{}".format(self.regexs.float)),
                 SM( r"          Convergence on gradient requested:\s+{}".format(self.regexs.float)),
                 SM( r"              XC Information",
-                    adHoc=self.adHoc_xc_functionals()
+                    subMatchers=[
+                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>B3LYP Method XC Potential)"),
+                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>PBE0 Method XC Functional)"),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>PerdewBurkeErnzerhof Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 LDA Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>PerdewBurkeErnz. Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                    ],
                 ),
                 SM( r"   convergence    iter        energy       DeltaE   RMS-Dens  Diis-err    time",
                     sections=["x_nwchem_section_dft_scf"],
@@ -246,6 +253,7 @@ class NWChemMainParser(MainHierarchicalParser):
     def onClose_section_method(self, backend, gIndex, section):
         backend.addValue("electronic_structure_method", self.electronic_structure_method)
 
+
     def onClose_x_nwchem_section_geo_opt_task(self, backend, gIndex, section):
         steps = section["x_nwchem_section_geo_opt_step"]
         if steps:
@@ -277,10 +285,31 @@ class NWChemMainParser(MainHierarchicalParser):
 
     #=======================================================================
     # adHoc
-    def adHoc_xc_functionals(self):
-        def wrapper(parser):
-            pass
-        return wrapper
+    # def adHoc_xc_functionals(self):
+        # def wrapper(parser):
+
+            # # Define the different functional shortcuts here
+            # shortcuts = [
+                # (re.compile("\s+B3LYP Method XC Potential"), "HYB_GGA_XC_B3LYP"),
+                # (re.compile("\s+PBE0 Method XC Functional"), "HYB_GGA_XC_PBEH"),
+            # ]
+
+            # # Define the end criterion
+            # end_str = re.compile("")
+            # end = False
+
+            # while not end:
+                # line = parser.fIn.readline()
+                # if end_str.match(line):
+                    # end = True
+                    # break
+
+                # # Try to see if some combination has been declared
+                # for functional in shortcuts:
+
+                # # If no shortcut has been declared, try the individual parts
+                # for functional in parts:
+        # return wrapper
 
     def adHoc_forces(self):
         def wrapper(parser):
@@ -343,6 +372,17 @@ class NWChemMainParser(MainHierarchicalParser):
         return wrapper
 
     #=======================================================================
+    # End actions
+    # def save_xc(self, xc_name, weight=None, parameters=None):
+        # def wrapper():
+            # gId = self.backend.openSection("x_nwchem_section_xc_functional")
+            # self.backend.addValue("x_nwchem_xc_functional_name", xc_name)
+            # if weight:
+                # self.backend.addValue("x_nwchem_xc_functional_weight", weight)
+            # self.backend.closeSection("x_nwchem_section_xc_functional", gId)
+        # return wrapper
+
+    #=======================================================================
     # SimpleMatcher specific onClose functions
     def save_dft_data(self):
         def wrapper(backend, gIndex, section):
@@ -358,14 +398,63 @@ class NWChemMainParser(MainHierarchicalParser):
 
             # If a geo opt has just been started, save the general settings
             if self.save_method:
+
+                # Basic settings
                 section.add_latest_value("x_nwchem_dft_spin_multiplicity", "spin_target_multiplicity")
                 section.add_latest_value("x_nwchem_dft_total_charge", "total_charge")
                 section.add_latest_value("x_nwchem_dft_max_iteration", "scf_max_iteration")
                 section.add_latest_value("x_nwchem_dft_scf_threshold_energy_change", "scf_threshold_energy_change")
 
+                # XC settings
+                class XCFunctional(object):
+                    def __init__(self, name, weight, parameters=None):
+                        self.name = name
+                        self.weight = weight
+                        self.parameters = parameters
+
+                xc_list = []
+
+                # Check if shortcut was defined
+                shortcut = section.get_latest_value("x_nwchem_xc_functional_shortcut")
+                if shortcut:
+                    shortcut_map = {
+                        "B3LYP Method XC Potential": "HYB_GGA_XC_B3LYP",
+                        "PBE0 Method XC Functional": "HYB_GGA_XC_PBEH",
+                    }
+                    norm_name = shortcut_map.get(shortcut)
+                    if norm_name:
+                        xc_list.append(XCFunctional(norm_name, 1.0))
+                # If no shortcut is defined, see the list of components
+                else:
+                    functionals = section["x_nwchem_section_xc_functional"]
+                    if functionals:
+                        component_map = {
+                            "PerdewBurkeErnzerhof Exchange Functional": "GGA_X_PBE",
+                            "PerdewBurkeErnz. Correlation Functional": "GGA_C_PBE",
+                        }
+                        for functional in functionals:
+                            name = functional.get_latest_value("x_nwchem_xc_functional_name")
+                            weight = functional.get_latest_value("x_nwchem_xc_functional_weight")
+                            norm_name = component_map.get(name)
+                            if norm_name:
+                                id_xc = backend.openSection("section_XC_functionals")
+                                backend.addValue("XC_functional_name", norm_name)
+                                backend.addValue("XC_functional_weight", weight)
+                                backend.closeSection("section_XC_functionals", id_xc)
+                                xc = XCFunctional(norm_name, weight)
+                                xc_list.append(xc)
+
+                # Create the summary string
+                xc_list.sort(key=lambda x: x.name)
+                xc_summary = ""
+                for i_xc, xc in enumerate(xc_list):
+                    if i_xc != 0:
+                        xc_summary += "+"
+                    xc_summary += "{}*{}".format(xc.weight, xc.name)
+                if xc_summary is not "":
+                    self.backend.addValue("XC_functional", xc_summary)
+
                 self.save_method = False
-            # print(multiplicity)
-            # print(energy_total)
 
             self.n_scf_iterations = 0
         return wrapper

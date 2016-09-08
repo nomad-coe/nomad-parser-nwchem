@@ -623,9 +623,9 @@ class TestDFTGeoOpt(unittest.TestCase):
 
 
 #===============================================================================
-# class TestXCFunctional(unittest.TestCase):
-    # """Tests that the XC functionals can be properly parsed.
-    # """
+class TestXCFunctional(unittest.TestCase):
+    """Tests that the XC functionals can be properly parsed.
+    """
 
     # def test_lda(self):
         # xc = get_result("xc_functional/lda", "XC_functional")
@@ -635,13 +635,13 @@ class TestDFTGeoOpt(unittest.TestCase):
         # xc = get_result("xc_functional/blyp", "XC_functional")
         # self.assertEqual(xc, "1*GGA_C_LYP+1*GGA_X_B88")
 
-    # def test_b3lyp(self):
-        # xc = get_result("xc_functional/b3lyp", "XC_functional")
-        # self.assertEqual(xc, "1*HYB_GGA_XC_B3LYP")
+    def test_b3lyp(self):
+        xc = get_result("dft/functionals/b3lyp", "XC_functional")
+        self.assertEqual(xc, "1.0*HYB_GGA_XC_B3LYP")
 
-    # def test_pbe(self):
-        # xc = get_result("xc_functional/pbe", "XC_functional")
-        # self.assertEqual(xc, "1*GGA_C_PBE+1*GGA_X_PBE")
+    def test_pbe(self):
+        xc = get_result("dft/functionals/pbe", "XC_functional")
+        self.assertEqual(xc, "1.0*GGA_C_PBE+1.0*GGA_X_PBE")
 
     # def test_olyp(self):
         # xc = get_result("xc_functional/olyp", "XC_functional")
@@ -651,9 +651,9 @@ class TestDFTGeoOpt(unittest.TestCase):
         # xc = get_result("xc_functional/hcth", "XC_functional")
         # self.assertEqual(xc, "1*GGA_XC_HCTH_120")
 
-    # def test_pbe0(self):
-        # xc = get_result("xc_functional/pbe0", "XC_functional")
-        # self.assertEqual(xc, "1*HYB_GGA_XC_PBEH")
+    def test_pbe0(self):
+        xc = get_result("dft/functionals/pbe0", "XC_functional")
+        self.assertEqual(xc, "1.0*HYB_GGA_XC_PBEH")
 
     # def test_bp(self):
         # xc = get_result("xc_functional/bp", "XC_functional")
@@ -1057,6 +1057,7 @@ if __name__ == '__main__':
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTEnergy))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTForce))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGeoOpt))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestXCFunctional))
 
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestGeoOpt))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestInputParser))
