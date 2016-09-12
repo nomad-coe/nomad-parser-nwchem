@@ -118,12 +118,27 @@ class NWChemMainParser(MainHierarchicalParser):
                 SM( r"          Convergence on density requested:\s+{}".format(self.regexs.float)),
                 SM( r"          Convergence on gradient requested:\s+{}".format(self.regexs.float)),
                 SM( r"              XC Information",
+                    subFlags=SM.SubFlags.Unordered,
                     subMatchers=[
                         SM("\s+(?P<x_nwchem_xc_functional_shortcut>B3LYP Method XC Potential)"),
                         SM("\s+(?P<x_nwchem_xc_functional_shortcut>PBE0 Method XC Functional)"),
+                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>Becke half-and-half Method XC Potential)"),
+                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>HCTH120  Method XC Functional)"),
+                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>HCTH147  Method XC Functional)"),
+                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>HCTH407 Method XC Functional)"),
                         SM("\s+(?P<x_nwchem_xc_functional_name>PerdewBurkeErnzerhof Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Becke 1988 Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Lee-Yang-Parr Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991   Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
                         SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 LDA Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
                         SM("\s+(?P<x_nwchem_xc_functional_name>PerdewBurkeErnz. Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1981 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1986 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Hartree-Fock \(Exact\) Exchange)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>Slater Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
+                        SM("\s+(?P<x_nwchem_xc_functional_name>OPTX     Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_functional"]),
                     ],
                 ),
                 SM( r"   convergence    iter        energy       DeltaE   RMS-Dens  Diis-err    time",
@@ -252,7 +267,6 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def onClose_section_method(self, backend, gIndex, section):
         backend.addValue("electronic_structure_method", self.electronic_structure_method)
-
 
     def onClose_x_nwchem_section_geo_opt_task(self, backend, gIndex, section):
         steps = section["x_nwchem_section_geo_opt_step"]
@@ -407,12 +421,22 @@ class NWChemMainParser(MainHierarchicalParser):
 
                 # XC settings
                 class XCFunctional(object):
-                    def __init__(self, name, weight, parameters=None):
+                    def __init__(self, name, weight, locality=None):
                         self.name = name
                         self.weight = weight
-                        self.parameters = parameters
+                        self.locality = locality
+                        self.piece = False
 
-                xc_list = []
+                    def __eq__(self, other):
+                        if isinstance(other, self.__class__):
+                            return self.__dict__ == other.__dict__
+                        else:
+                            return False
+
+                    def get_key(self):
+                        return "{}_{}_{}".format(self.name, self.weight, self.locality)
+
+                xc_final_list = []
 
                 # Check if shortcut was defined
                 shortcut = section.get_latest_value("x_nwchem_xc_functional_shortcut")
@@ -420,34 +444,96 @@ class NWChemMainParser(MainHierarchicalParser):
                     shortcut_map = {
                         "B3LYP Method XC Potential": "HYB_GGA_XC_B3LYP",
                         "PBE0 Method XC Functional": "HYB_GGA_XC_PBEH",
+                        "Becke half-and-half Method XC Potential": "HYB_GGA_XC_BHANDH",
+                        "HCTH120  Method XC Functional": "GGA_XC_HCTH_120",
+                        "HCTH147  Method XC Functional": "GGA_XC_HCTH_147",
+                        "HCTH407 Method XC Functional": "GGA_XC_HCTH_407",
                     }
                     norm_name = shortcut_map.get(shortcut)
                     if norm_name:
-                        xc_list.append(XCFunctional(norm_name, 1.0))
-                # If no shortcut is defined, see the list of components
+                        xc_final_list.append(XCFunctional(norm_name, 1.0))
                 else:
+                    # Check if any combination with a more generic name is present
                     functionals = section["x_nwchem_section_xc_functional"]
                     if functionals:
-                        component_map = {
-                            "PerdewBurkeErnzerhof Exchange Functional": "GGA_X_PBE",
-                            "PerdewBurkeErnz. Correlation Functional": "GGA_C_PBE",
-                        }
+                        xc_info = {}
                         for functional in functionals:
                             name = functional.get_latest_value("x_nwchem_xc_functional_name")
                             weight = functional.get_latest_value("x_nwchem_xc_functional_weight")
-                            norm_name = component_map.get(name)
-                            if norm_name:
-                                id_xc = backend.openSection("section_XC_functionals")
-                                backend.addValue("XC_functional_name", norm_name)
-                                backend.addValue("XC_functional_weight", weight)
-                                backend.closeSection("section_XC_functionals", id_xc)
-                                xc = XCFunctional(norm_name, weight)
-                                xc_list.append(xc)
+                            locality = functional.get_latest_value("x_nwchem_xc_functional_type")
+                            if locality is not None:
+                                locality = locality.strip()
+                            xc = XCFunctional(name, weight, locality)
+                            xc_info[xc.get_key()] = xc
+                            # print("ADDED:")
+                            # print(xc.get_key())
+
+                        combinations = {
+                            "GGA_X_OPTX": (
+                                XCFunctional("OPTX     Exchange Functional", "1.432", "non-local"),
+                                XCFunctional("Slater Exchange Functional", "1.052", "local")
+                            ),
+                            "GGA_C_PBE": (
+                                XCFunctional("Perdew 1991 LDA Correlation Functional", "1.0", "local"),
+                                XCFunctional("PerdewBurkeErnz. Correlation Functional", "1.0", "non-local")
+                            ),
+                            "GGA_C_P86": (
+                                XCFunctional("Perdew 1981 Correlation Functional", "1.0", "local"),
+                                XCFunctional("Perdew 1986 Correlation Functional", "1.0", "non-local")
+                            ),
+                            "GGA_C_PW91": (
+                                XCFunctional("Perdew 1991 Correlation Functional", "1.0", "non-local"),
+                                XCFunctional("Perdew 1991 LDA Correlation Functional", "1.0", "local")
+                            ),
+                        }
+                        for name, parts in combinations.items():
+                            combination_found = True
+                            for part in parts:
+                                if part.get_key() not in xc_info:
+                                    combination_found = False
+                                    # print("NOT FOUND:")
+                                    # print(part.get_key())
+
+                            if combination_found:
+                                for part in parts:
+                                    xc_info[part.get_key()].piece = True
+                                # print(name)
+                                xc = XCFunctional(name, 1.0)
+                                # print("ADDED COMBO:")
+                                # print(xc.get_key())
+                                xc_final_list.append(xc)
+
+                        # Gather the pieces that were not part of any bigger
+                        # combination
+                        for xc in xc_info.values():
+                            if not xc.piece:
+                                component_map = {
+                                    "PerdewBurkeErnzerhof Exchange Functional": "GGA_X_PBE",
+                                    "Becke 1988 Exchange Functional": "GGA_X_B88",
+                                    "Lee-Yang-Parr Correlation Functional": "GGA_C_LYP",
+                                    "Perdew 1986 Correlation Functional": "GGA_C_P86",
+                                    "Perdew 1991 Correlation Functional": "GGA_C_PW91",
+                                    "Perdew 1991   Exchange Functional": "GGA_X_PW91",
+                                    "Hartree-Fock \(Exact\) Exchange": "HF_X",
+                                }
+                                name = xc.name
+                                locality = xc.locality
+                                weight = xc.weight
+                                norm_name = component_map.get(name)
+                                if norm_name and (locality is None or locality == ""):
+
+                                    id_xc = backend.openSection("section_XC_functionals")
+                                    backend.addValue("XC_functional_name", norm_name)
+                                    if weight is not None:
+                                        backend.addValue("XC_functional_weight", weight)
+                                    backend.closeSection("section_XC_functionals", id_xc)
+                                    xc = XCFunctional(norm_name, weight)
+                                    xc_final_list.append(xc)
 
                 # Create the summary string
-                xc_list.sort(key=lambda x: x.name)
+                xc_final_list.sort(key=lambda x: x.name)
                 xc_summary = ""
-                for i_xc, xc in enumerate(xc_list):
+                for i_xc, xc in enumerate(xc_final_list):
                     if i_xc != 0:
                         xc_summary += "+"
                     xc_summary += "{}*{}".format(xc.weight, xc.name)
