@@ -47,13 +47,13 @@ def get_result(folder, metaname, optimize=True):
 
 
 #===============================================================================
-class TestDFTEnergy(unittest.TestCase):
+class TestDFTGaussianEnergy(unittest.TestCase):
     """Tests that the parser can handle DFT energy calculations.
     """
 
     @classmethod
     def setUpClass(cls):
-        cls.results = get_results("dft/energy", "section_run")
+        cls.results = get_results("dft_gaussian/energy", "section_run")
         # cls.results.print_summary()
 
     def test_program_name(self):
@@ -188,12 +188,12 @@ class TestDFTEnergy(unittest.TestCase):
 
 
 #===============================================================================
-class TestDFTForce(unittest.TestCase):
+class TestDFTGaussianForce(unittest.TestCase):
     """Tests that the parser can handle DFT force calculations.
     """
     @classmethod
     def setUpClass(cls):
-        cls.results = get_results("dft/force", "section_run")
+        cls.results = get_results("dft_gaussian/force", "section_run")
 
     def test_atom_forces(self):
         result = self.results["atom_forces"]
@@ -209,12 +209,12 @@ class TestDFTForce(unittest.TestCase):
 
 
 #===============================================================================
-class TestDFTGeoOpt(unittest.TestCase):
+class TestDFTGaussianGeoOpt(unittest.TestCase):
     """Tests that the parser can handle DFT geometry optimizations.
     """
     @classmethod
     def setUpClass(cls):
-        cls.results = get_results("dft/geo_opt", "section_run")
+        cls.results = get_results("dft_gaussian/geo_opt", "section_run")
 
     def test_frame_sequence(self):
         sequence = self.results["section_frame_sequence"][0]
@@ -225,7 +225,6 @@ class TestDFTGeoOpt(unittest.TestCase):
 
         # Potential energy
         pot_ener = sequence["frame_sequence_potential_energy"]
-        # print(pot_ener)
         expected_pot_ener = convert_unit(
             np.array([
                 -76.42941861,
@@ -319,74 +318,111 @@ class TestDFTGeoOpt(unittest.TestCase):
 
 
 #===============================================================================
-# class TestMD(unittest.TestCase):
-    # @classmethod
-    # def setUpClass(cls):
-        # cls.results = get_results("md/nve", "section_run")
-        # cls.temp = convert_unit(
-            # np.array([
-                # 110.096,
-                # 232.496,
-                # 351.956,
-                # 412.578,
-                # 393.180,
-            # ]),
-            # "K"
-        # )
-        # cls.cons = convert_unit(
-            # np.array([
-                # -1.0970967730,
-                # -1.0975238350,
-                # -1.0977293448,
-                # -1.0977368045,
-                # -1.0975921059,
-            # ]),
-            # "hartree"
-        # )
-        # cls.pot = convert_unit(
-            # np.array([
-                # -1.1023492072,
-                # -1.1128688938,
-                # -1.1216882365,
-                # -1.1256188624,
-                # -1.1245335482,
-            # ]),
-            # "hartree"
-        # )
-        # cls.kin = convert_unit(
-            # np.array([
-                # -1.1018262261,
-                # -1.1117644858,
-                # -1.1200163669,
-                # -1.1236590243,
-                # -1.1226658551,
-            # ]) -
-            # np.array([
-                # -1.1023492072,
-                # -1.1128688938,
-                # -1.1216882365,
-                # -1.1256188624,
-                # -1.1245335482,
-            # ]),
-            # "hartree"
-        # )
+class TestDFTGaussianMD(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.results = get_results("dft_gaussian/md", "section_run")
+        cls.time = convert_unit(
+            np.array([
+                0.241888,
+                0.483777,
+                0.725665,
+                0.967554,
+                1.209442,
+            ]),
+            "fs"
+        )
+        cls.kin = convert_unit(
+            np.array([
+                0.003270,
+                0.003055,
+                0.001843,
+                0.001541,
+                0.001163,
+            ]),
+            "hartree"
+        )
+        cls.pot = convert_unit(
+            np.array([
+                -76.324877,
+                -76.324529,
+                -76.324138,
+                -76.323751,
+                -76.323442,
+            ]),
+            "hartree"
+        )
+        cls.cons = convert_unit(
+            np.array([
+                -76.321607,
+                -76.321474,
+                -76.322295,
+                -76.322210,
+                -76.322278,
+            ]),
+            "hartree"
+        )
+        cls.temp = convert_unit(
+            np.array([
+                688.40,
+                643.13,
+                387.93,
+                324.45,
+                244.91,
+            ]),
+            "K"
+        )
+
+    def test_sampling_method(self):
+        result = self.results["sampling_method"]
+        self.assertEqual(result, "molecular_dynamics")
 
     # def test_number_of_atoms(self):
         # result = self.results["number_of_atoms"]
         # expected_result = np.array(5*[2])
         # self.assertTrue(np.array_equal(result, expected_result))
 
-    # def test_ensemble_type(self):
-        # result = self.results["ensemble_type"]
-        # self.assertEqual(result, "NVE")
+    def test_ensemble_type(self):
+        result = self.results["ensemble_type"]
+        self.assertEqual(result, "NVT")
 
-    # def test_sampling_method(self):
-        # result = self.results["sampling_method"]
-        # self.assertEqual(result, "molecular_dynamics")
+    def test_number_of_frames_in_sequence(self):
+        result = self.results["number_of_frames_in_sequence"]
+        self.assertEqual(result, 5)
 
-    # def test_number_of_frames_in_sequence(self):
-        # result = self.results["number_of_frames_in_sequence"]
-        # self.assertEqual(result, 5)
+    def test_frame_sequence_potential_energy(self):
+        result = self.results["frame_sequence_potential_energy"]
+        self.assertTrue(np.array_equal(result, self.pot))
+
+    def test_frame_sequence_kinetic_energy(self):
+        result = self.results["frame_sequence_kinetic_energy"]
+        self.assertTrue(np.array_equal(result, self.kin))
+
+    def test_frame_sequence_local_frames_ref(self):
+        result = self.results["frame_sequence_local_frames_ref"]
+        self.assertTrue(np.array_equal(result, np.array(range(5))))
+
+    # def test_frame_sequence_conserved_quantity(self):
+        # result = self.results["frame_sequence_conserved_quantity"]
+        # self.assertTrue(np.array_equal(result, self.cons))
+
+    # def test_frame_sequence_temperature(self):
+        # result = self.results["frame_sequence_temperature"]
+        # self.assertTrue(np.array_equal(result, self.temp))
+
+    # def test_frame_sequence_time(self):
+        # result = self.results["frame_sequence_time"]
+        # expected_result = convert_unit(
+            # np.array([
+                # 4,
+                # 8,
+                # 12,
+                # 16,
+                # 20,
+            # ]),
+            # "hbar/hartree"
+        # )
+        # self.assertTrue(np.array_equal(result, expected_result))
 
     # def test_atom_positions(self):
         # result = self.results["atom_positions"]
@@ -447,36 +483,6 @@ class TestDFTGeoOpt(unittest.TestCase):
         # self.assertTrue(np.array_equal(result[0, :], expected_start))
         # self.assertTrue(np.array_equal(result[-1, :], expected_end))
 
-    # def test_frame_sequence_potential_energy(self):
-        # result = self.results["frame_sequence_potential_energy"]
-        # self.assertTrue(np.array_equal(result, self.pot))
-
-    # def test_frame_sequence_kinetic_energy(self):
-        # result = self.results["frame_sequence_kinetic_energy"]
-        # self.assertTrue(np.array_equal(result, self.kin))
-
-    # def test_frame_sequence_conserved_quantity(self):
-        # result = self.results["frame_sequence_conserved_quantity"]
-        # self.assertTrue(np.array_equal(result, self.cons))
-
-    # def test_frame_sequence_temperature(self):
-        # result = self.results["frame_sequence_temperature"]
-        # self.assertTrue(np.array_equal(result, self.temp))
-
-    # def test_frame_sequence_time(self):
-        # result = self.results["frame_sequence_time"]
-        # expected_result = convert_unit(
-            # np.array([
-                # 4,
-                # 8,
-                # 12,
-                # 16,
-                # 20,
-            # ]),
-            # "hbar/hartree"
-        # )
-        # self.assertTrue(np.array_equal(result, expected_result))
-
     # def test_frame_sequence_potential_energy_stats(self):
         # result = self.results["frame_sequence_potential_energy_stats"]
         # expected_result = np.array([self.pot.mean(), self.pot.std()])
@@ -503,7 +509,7 @@ class TestDFTGeoOpt(unittest.TestCase):
 
 
 #===============================================================================
-class TestXCFunctional(unittest.TestCase):
+class TestDFTGaussianXCFunctional(unittest.TestCase):
     """Tests that the XC functionals can be properly parsed.
     """
 
@@ -512,65 +518,65 @@ class TestXCFunctional(unittest.TestCase):
         # self.assertEqual(xc, "1*LDA_XC_TETER93")
 
     def test_blyp(self):
-        xc = get_result("dft/functionals/blyp", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/blyp", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_C_LYP+1.0*GGA_X_B88")
 
     def test_b3lyp(self):
-        xc = get_result("dft/functionals/b3lyp", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/b3lyp", "XC_functional")
         self.assertEqual(xc, "1.0*HYB_GGA_XC_B3LYP")
 
     def test_pbe(self):
-        xc = get_result("dft/functionals/pbe", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/pbe", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_C_PBE+1.0*GGA_X_PBE")
 
     def test_pbe0(self):
-        xc = get_result("dft/functionals/pbe0", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/pbe0", "XC_functional")
         self.assertEqual(xc, "1.0*HYB_GGA_XC_PBEH")
 
     def test_bp86(self):
-        xc = get_result("dft/functionals/bp86", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/bp86", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_C_P86+1.0*GGA_X_B88")
 
     def test_bp91(self):
-        xc = get_result("dft/functionals/bp91", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/bp91", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_C_PW91+1.0*GGA_X_B88")
 
     def test_pw91(self):
-        xc = get_result("dft/functionals/pw91", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/pw91", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_C_PW91+1.0*GGA_X_PW91")
 
     def test_bechehandh(self):
-        xc = get_result("dft/functionals/beckehandh", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/beckehandh", "XC_functional")
         self.assertEqual(xc, "1.0*HYB_GGA_XC_BHANDH")
 
     def test_olyp(self):
-        xc = get_result("dft/functionals/olyp", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/olyp", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_C_LYP+1.0*GGA_X_OPTX")
 
     def test_hcth120(self):
-        xc = get_result("dft/functionals/hcth120", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/hcth120", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_XC_HCTH_120")
 
     def test_hcth147(self):
-        xc = get_result("dft/functionals/hcth147", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/hcth147", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_XC_HCTH_147")
 
     def test_hcth407(self):
-        xc = get_result("dft/functionals/hcth407", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/hcth407", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_XC_HCTH_407")
 
 
 #===============================================================================
 if __name__ == '__main__':
     suites = []
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTEnergy))
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTForce))
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGeoOpt))
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestXCFunctional))
+    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianEnergy))
+    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianForce))
+    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianGeoOpt))
+    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianXCFunctional))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianMD))
 
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestGeoOpt))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestInputParser))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestMD))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestMDTrajFormats))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestMDPrintSettings))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestPeriodicity))
