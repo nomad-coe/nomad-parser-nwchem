@@ -256,7 +256,16 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
         self.assertTrue(np.array_equal(np.array([positions[0], positions[-1]]), expected_pos))
 
         # Test labels
-        labels = self.results["atom_labels"]
+        scc_indices = self.results["frame_sequence_local_frames_ref"]
+        sccs = self.results["section_single_configuration_calculation"]
+        systems = self.results["section_system"]
+        labels = []
+        for index in scc_indices:
+            scc = sccs[index]
+            system_ref = scc["single_configuration_calculation_to_system_ref"]
+            system = systems[system_ref]
+            i_labels = system["atom_labels"]
+            labels.append(i_labels)
         expected_labels = np.array(4*["O", "H", "H"]).reshape(4, 3)
         self.assertTrue(np.array_equal(labels, expected_labels))
 
@@ -313,7 +322,7 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
 
     def test_frame_sequence_local_frames_ref(self):
         result = self.results["frame_sequence_local_frames_ref"]
-        expected_result = np.array([0, 1, 2, 3])
+        expected_result = np.array([0, 2, 4, 6])
         self.assertTrue(np.array_equal(result, expected_result))
 
 
@@ -427,24 +436,48 @@ class TestDFTGaussianMD(unittest.TestCase):
         self.assertTrue(np.allclose(result[0], expected_result[0], rtol=0, atol=0.001))
         self.assertTrue(np.allclose(result[1], expected_result[1], rtol=0, atol=0.0001))
 
-    # def test_atom_positions(self):
-        # result = self.results["atom_positions"]
-        # expected_start = convert_unit(
-            # np.array([
-                # [0.371489, 0.000511, 0.000554],
-                # [-0.371489, -0.000511, -0.000554],
-            # ]),
-            # "angstrom"
-        # )
-        # expected_end = convert_unit(
-            # np.array([
-                # [0.378523, 0.002532, 0.002744],
-                # [-0.378523, -0.002532, -0.002744],
-            # ]),
-            # "angstrom"
-        # )
-        # self.assertTrue(np.array_equal(result[0, :], expected_start))
-        # self.assertTrue(np.array_equal(result[-1, :], expected_end))
+    def test_atom_positions(self):
+        result = self.results["atom_positions"]
+        expected_start = convert_unit(
+            np.array([
+                [-0.000000, -0.030541, 0.214843],
+                [0.000000, 1.520797, -0.645137],
+                [-0.000000, -1.286347, -1.077605],
+            ]),
+            "bohr"
+        )
+        expected_end = convert_unit(
+            np.array([
+                [-0.000000, -0.027285, 0.217217],
+                [0.000000, 1.483269, -0.644023],
+                [-0.000000, -1.300501, -1.116390],
+            ]),
+            "bohr"
+        )
+        self.assertTrue(np.array_equal(result[0, :], expected_start))
+        self.assertTrue(np.array_equal(result[-1, :], expected_end))
+
+    def test_atom_forces(self):
+        result = self.results["atom_forces"]
+        expected_start = convert_unit(
+            -np.array([
+                [0.000000, 0.017462, -0.022827],
+                [-0.000000, -0.023895, 0.014570],
+                [0.000000, 0.006434, 0.008257],
+            ]),
+            "forceAu"
+        )
+        expected_end = convert_unit(
+            -np.array([
+                [0.000000, 0.053886, -0.016628],
+                [-0.000000, -0.046371, 0.025550],
+                [-0.000000, -0.007515, -0.008923],
+            ]),
+            "forceAu"
+        )
+
+        self.assertTrue(np.array_equal(result[0, :], expected_start))
+        self.assertTrue(np.array_equal(result[-1, :], expected_end))
 
     # def test_atom_velocities(self):
         # result = self.results["atom_velocities"]
@@ -466,36 +499,11 @@ class TestDFTGaussianMD(unittest.TestCase):
         # self.assertTrue(np.array_equal(result[0, :], expected_start))
         # self.assertTrue(np.array_equal(result[-1, :], expected_end))
 
-    # def test_atom_forces(self):
-        # result = self.results["atom_forces"]
-        # expected_start = convert_unit(
-            # np.array([
-                # [0.15293653991241, -0.00036559789218, -0.00039617900820],
-                # [-0.15293653991238, 0.00036559789217, 0.00039617900820],
-            # ]),
-            # "forceAu"
-        # )
-        # expected_end = convert_unit(
-            # np.array([
-                # [-0.03595092814462, -0.00079338139843, -0.00085974499854],
-                # [0.03595092814462, 0.00079338139843, 0.00085974499854],
-            # ]),
-            # "forceAu"
-        # )
-
-        # self.assertTrue(np.array_equal(result[0, :], expected_start))
-        # self.assertTrue(np.array_equal(result[-1, :], expected_end))
-
 
 #===============================================================================
 class TestDFTGaussianXCFunctional(unittest.TestCase):
     """Tests that the XC functionals can be properly parsed.
     """
-
-    # def test_lda(self):
-        # xc = get_result("xc_functional/lda", "XC_functional")
-        # self.assertEqual(xc, "1*LDA_XC_TETER93")
-
     def test_blyp(self):
         xc = get_result("dft_gaussian/functionals/blyp", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_C_LYP+1.0*GGA_X_B88")
@@ -548,17 +556,11 @@ class TestDFTGaussianXCFunctional(unittest.TestCase):
 #===============================================================================
 if __name__ == '__main__':
     suites = []
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianEnergy))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianForce))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianEnergy))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianForce))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianGeoOpt))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianXCFunctional))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianXCFunctional))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianMD))
 
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestGeoOpt))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestInputParser))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestMDTrajFormats))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestMDPrintSettings))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestPeriodicity))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestXCFunctional))
     alltests = unittest.TestSuite(suites)
     unittest.TextTestRunner(verbosity=0).run(alltests)
