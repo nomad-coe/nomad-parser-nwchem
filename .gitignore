@@ -53,3 +53,6 @@ TAGS
 
 lib/
 env/
+
+# Egg
+parser/parser-nwchem/nwchemparser.egg-info/
