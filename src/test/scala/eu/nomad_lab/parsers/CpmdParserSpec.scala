@@ -16,4 +16,8 @@ object NWChemParserSpec extends Specification {
   "test geo_opt with json" >> {
     ParserRun.parse(NWChemParser, "parsers/nwchem/test/examples/geo_opt/output.out", "json") must_== ParseResult.ParseSuccess
   }
+
+  "test md with json" >> {
+    ParserRun.parse(NWChemParser, "parsers/nwchem/test/examples/md/output.out", "json") must_== ParseResult.ParseSuccess
+  }
 }

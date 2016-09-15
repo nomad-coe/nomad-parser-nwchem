@@ -19,7 +19,6 @@ class NWChemMainParser(MainHierarchicalParser):
         super(NWChemMainParser, self).__init__(file_path, parser_context)
         self.n_scf_iterations = 0
         self.latest_dft_section = None
-        # self.frame_sequence_local_frames_ref = []
         self.method_index = None
         self.system_index = None
         self.save_method = False
@@ -39,6 +38,9 @@ class NWChemMainParser(MainHierarchicalParser):
         self.frame_sequence_cache.add("frame_sequence_local_frames_ref", [], single=False, update=True)
         self.frame_sequence_cache.add("frame_sequence_potential_energy", [], single=False, update=True)
         self.frame_sequence_cache.add("frame_sequence_kinetic_energy", [], single=False, update=True)
+        self.frame_sequence_cache.add("frame_sequence_temperature", [], single=False, update=True)
+        self.frame_sequence_cache.add("frame_sequence_time", [], single=False, update=True)
+        self.frame_sequence_cache.add("frame_sequence_to_sampling_ref", single=False, update=True)
 
         # Cache for storing system information
         self.system_cache = CacheService(self.parser_context)
@@ -110,10 +112,9 @@ class NWChemMainParser(MainHierarchicalParser):
     def geo_opt_module(self):
         return SM( "                           NWChem Geometry Optimization",
             sections=["section_method", "section_frame_sequence", "section_sampling_method", "x_nwchem_section_geo_opt_module"],
-            onClose={
-                "section_sampling_method": self.save_geo_opt_sampling_id,
-                "section_frame_sequence": self.save_local_frames_ref,
-            },
+            # onClose={
+                # "section_sampling_method": self.save_geo_opt_sampling_id,
+            # },
             subFlags=SM.SubFlags.Sequenced,
             subMatchers=[
                 SM( r" maximum gradient threshold         \(gmax\) =\s+(?P<geometry_optimization_threshold_force__forceAu>{})".format(self.regexs.float)),
@@ -197,12 +198,12 @@ class NWChemMainParser(MainHierarchicalParser):
                         SM("                         DFT ENERGY GRADIENTS"),
                         SM("            QMD Run Information",
                             subMatchers=[
-                                SM("  Time elapsed \(fs\) :(?P<x_nwchem_qmd_step_time__fs>{})".format(self.regexs.float)),
+                                SM("  Time elapsed \(fs\) :\s+(?P<x_nwchem_qmd_step_time__fs>{})".format(self.regexs.float)),
                                 SM("  Kin. energy \(a\.u\.\):\s+{}\s+(?P<x_nwchem_qmd_step_kinetic_energy__hartree>{})".format(self.regexs.int, self.regexs.float)),
                                 SM("  Pot. energy \(a\.u\.\):\s+{}\s+(?P<x_nwchem_qmd_step_potential_energy__hartree>{})".format(self.regexs.int, self.regexs.float)),
                                 SM("  Tot. energy \(a\.u\.\):\s+{}\s+(?P<x_nwchem_qmd_step_total_energy__hartree>{})".format(self.regexs.int, self.regexs.float)),
-                                SM("  Target temp. (K)  :\s+{}\s+(?P<x_nwchem_qmd_step_target_temperature__K>{})".format(self.regexs.int, self.regexs.float)),
-                                SM("  Current temp. (K) :\s+{}\s+(?P<x_nwchem_qmd_step_temperature__K>{})".format(self.regexs.int, self.regexs.float)),
+                                SM("  Target temp\. \(K\)  :\s+{}\s+(?P<x_nwchem_qmd_step_target_temperature__K>{})".format(self.regexs.int, self.regexs.float)),
+                                SM("  Current temp\. \(K\) :\s+{}\s+(?P<x_nwchem_qmd_step_temperature__K>{})".format(self.regexs.int, self.regexs.float)),
                                 SM("  Dipole \(a\.u\.\)     :\s+{0}\s+({1}\s+{1}\s+{1})".format(self.regexs.int, self.regexs.float), startReTransform=self.dipole_transform)
                             ]
                         )
@@ -347,12 +348,26 @@ class NWChemMainParser(MainHierarchicalParser):
     def onClose_section_frame_sequence(self, backend, gIndex, section):
         self.frame_sequence_cache.addValue("number_of_frames_in_sequence")
         self.frame_sequence_cache.addArrayValues("frame_sequence_local_frames_ref")
+        self.frame_sequence_cache.addValue("frame_sequence_to_sampling_ref")
 
         potential_energy = np.array(self.frame_sequence_cache["frame_sequence_potential_energy"])
-        backend.addArrayValues("frame_sequence_potential_energy", potential_energy)
+        if potential_energy.size != 0:
+            backend.addArrayValues("frame_sequence_potential_energy", potential_energy)
+            backend.addArrayValues("frame_sequence_potential_energy_stats", np.array([potential_energy.mean(), potential_energy.std()]))
 
         kin_energy = np.array(self.frame_sequence_cache["frame_sequence_kinetic_energy"])
-        backend.addArrayValues("frame_sequence_kinetic_energy", kin_energy)
+        if kin_energy.size != 0:
+            backend.addArrayValues("frame_sequence_kinetic_energy", kin_energy)
+            backend.addArrayValues("frame_sequence_kinetic_energy_stats", np.array([kin_energy.mean(), kin_energy.std()]))
+
+        temp = np.array(self.frame_sequence_cache["frame_sequence_temperature"])
+        if temp.size != 0:
+            backend.addArrayValues("frame_sequence_temperature", temp)
+            backend.addArrayValues("frame_sequence_temperature_stats", np.array([temp.mean(), temp.std()]))
+
+        time = np.array(self.frame_sequence_cache["frame_sequence_time"])
+        if time.size != 0:
+            backend.addArrayValues("frame_sequence_time", time)
 
         self.frame_sequence_cache.clear()
 
@@ -373,6 +388,12 @@ class NWChemMainParser(MainHierarchicalParser):
         kin_energy = section.get_latest_value("x_nwchem_qmd_step_kinetic_energy")
         self.frame_sequence_cache["frame_sequence_kinetic_energy"].append(kin_energy)
 
+        temp = section.get_latest_value("x_nwchem_qmd_step_temperature")
+        self.frame_sequence_cache["frame_sequence_temperature"].append(temp)
+
+        time = section.get_latest_value("x_nwchem_qmd_step_time")
+        self.frame_sequence_cache["frame_sequence_time"].append(time)
+
     def onClose_x_nwchem_section_geo_opt_step(self, backend, gIndex, section):
         self.frame_sequence_cache["number_of_frames_in_sequence"] += 1
         pot_ener = section.get_latest_value("x_nwchem_geo_opt_step_energy")
@@ -383,6 +404,9 @@ class NWChemMainParser(MainHierarchicalParser):
     def onOpen_section_method(self, backend, gIndex, section):
         self.method_index = gIndex
         self.save_method = True
+
+    def onOpen_section_sampling_method(self, backend, gIndex, section):
+        self.frame_sequence_cache["frame_sequence_to_sampling_ref"] = gIndex
 
     def onOpen_x_nwchem_section_qmd_module(self, backend, gIndex, section):
         self.sampling_method_cache["sampling_method"] = "molecular_dynamics"
@@ -595,10 +619,6 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def add_frame_reference(self, backend, gIndex, section):
         self.frame_sequence_cache["frame_sequence_local_frames_ref"].append(gIndex)
-
-    def save_local_frames_ref(self, backend, gIndex, section):
-        backend.addArrayValues("frame_sequence_local_frames_ref", np.array(self.frame_sequence_local_frames_ref))
-        self.frame_sequence_local_frames_ref = []
 
     #=======================================================================
     # Start match transforms

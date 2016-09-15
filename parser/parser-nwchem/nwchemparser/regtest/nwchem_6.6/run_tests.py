@@ -377,14 +377,17 @@ class TestDFTGaussianMD(unittest.TestCase):
         result = self.results["sampling_method"]
         self.assertEqual(result, "molecular_dynamics")
 
-    # def test_number_of_atoms(self):
-        # result = self.results["number_of_atoms"]
-        # expected_result = np.array(5*[2])
-        # self.assertTrue(np.array_equal(result, expected_result))
-
     def test_ensemble_type(self):
         result = self.results["ensemble_type"]
         self.assertEqual(result, "NVT")
+
+    def test_frame_sequence_to_sampling_ref(self):
+        result = self.results["frame_sequence_to_sampling_ref"]
+        self.assertEqual(result, 0)
+
+    def test_frame_sequence_local_frames_ref(self):
+        result = self.results["frame_sequence_local_frames_ref"]
+        self.assertTrue(np.array_equal(result, np.array(range(5))))
 
     def test_number_of_frames_in_sequence(self):
         result = self.results["number_of_frames_in_sequence"]
@@ -398,31 +401,31 @@ class TestDFTGaussianMD(unittest.TestCase):
         result = self.results["frame_sequence_kinetic_energy"]
         self.assertTrue(np.array_equal(result, self.kin))
 
-    def test_frame_sequence_local_frames_ref(self):
-        result = self.results["frame_sequence_local_frames_ref"]
-        self.assertTrue(np.array_equal(result, np.array(range(5))))
+    def test_frame_sequence_temperature(self):
+        result = self.results["frame_sequence_temperature"]
+        self.assertTrue(np.array_equal(result, self.temp))
 
-    # def test_frame_sequence_conserved_quantity(self):
-        # result = self.results["frame_sequence_conserved_quantity"]
-        # self.assertTrue(np.array_equal(result, self.cons))
+    def test_frame_sequence_time(self):
+        result = self.results["frame_sequence_time"]
+        self.assertTrue(np.array_equal(result, self.time))
 
-    # def test_frame_sequence_temperature(self):
-        # result = self.results["frame_sequence_temperature"]
-        # self.assertTrue(np.array_equal(result, self.temp))
+    def test_frame_sequence_potential_energy_stats(self):
+        result = self.results["frame_sequence_potential_energy_stats"]
+        expected_result = np.array([self.pot.mean(), self.pot.std()])
+        self.assertTrue(np.allclose(result[0], expected_result[0], rtol=0, atol=0.00001e-18))
+        self.assertTrue(np.allclose(result[1], expected_result[1], rtol=0, atol=0.00001e-20))
 
-    # def test_frame_sequence_time(self):
-        # result = self.results["frame_sequence_time"]
-        # expected_result = convert_unit(
-            # np.array([
-                # 4,
-                # 8,
-                # 12,
-                # 16,
-                # 20,
-            # ]),
-            # "hbar/hartree"
-        # )
-        # self.assertTrue(np.array_equal(result, expected_result))
+    def test_frame_sequence_kinetic_energy_stats(self):
+        result = self.results["frame_sequence_kinetic_energy_stats"]
+        expected_result = np.array([self.kin.mean(), self.kin.std()])
+        self.assertTrue(np.allclose(result[0], expected_result[0], rtol=0, atol=0.00001e-18))
+        self.assertTrue(np.allclose(result[1], expected_result[1], rtol=0, atol=0.00001e-20))
+
+    def test_frame_sequence_temperature_stats(self):
+        result = self.results["frame_sequence_temperature_stats"]
+        expected_result = np.array([self.temp.mean(), self.temp.std()])
+        self.assertTrue(np.allclose(result[0], expected_result[0], rtol=0, atol=0.001))
+        self.assertTrue(np.allclose(result[1], expected_result[1], rtol=0, atol=0.0001))
 
     # def test_atom_positions(self):
         # result = self.results["atom_positions"]
@@ -482,30 +485,6 @@ class TestDFTGaussianMD(unittest.TestCase):
 
         # self.assertTrue(np.array_equal(result[0, :], expected_start))
         # self.assertTrue(np.array_equal(result[-1, :], expected_end))
-
-    # def test_frame_sequence_potential_energy_stats(self):
-        # result = self.results["frame_sequence_potential_energy_stats"]
-        # expected_result = np.array([self.pot.mean(), self.pot.std()])
-        # self.assertTrue(np.allclose(result[0], expected_result[0], rtol=0, atol=0.00001e-18))
-        # self.assertTrue(np.allclose(result[1], expected_result[1], rtol=0, atol=0.00001e-20))
-
-    # def test_frame_sequence_kinetic_energy_stats(self):
-        # result = self.results["frame_sequence_kinetic_energy_stats"]
-        # expected_result = np.array([self.kin.mean(), self.kin.std()])
-        # self.assertTrue(np.allclose(result[0], expected_result[0], rtol=0, atol=0.00001e-18))
-        # self.assertTrue(np.allclose(result[1], expected_result[1], rtol=0, atol=0.00001e-20))
-
-    # def test_frame_sequence_conserved_quantity_stats(self):
-        # result = self.results["frame_sequence_conserved_quantity_stats"]
-        # expected_result = np.array([self.cons.mean(), self.cons.std()])
-        # self.assertTrue(np.allclose(result[0], expected_result[0], rtol=0, atol=0.00001e-18))
-        # self.assertTrue(np.allclose(result[1], expected_result[1], rtol=0, atol=0.00001e-20))
-
-    # def test_frame_sequence_temperature_stats(self):
-        # result = self.results["frame_sequence_temperature_stats"]
-        # expected_result = np.array([self.temp.mean(), self.temp.std()])
-        # self.assertTrue(np.allclose(result[0], expected_result[0], rtol=0, atol=0.001))
-        # self.assertTrue(np.allclose(result[1], expected_result[1], rtol=0, atol=0.0001))
 
 
 #===============================================================================
@@ -571,7 +550,7 @@ if __name__ == '__main__':
     suites = []
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianEnergy))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianForce))
-    # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianGeoOpt))
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianGeoOpt))
     # suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianXCFunctional))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianMD))
 
