@@ -27,15 +27,9 @@ class NWChemParser(ParserInterface):
         # Search for the NWChem version specification. The correct parser is
         # initialized based on this information.
         regex_version = re.compile("              Northwest Computational Chemistry Package \(NWChem\) (\d+\.\d+)")
-        n_lines = 1000
         version_id = None
         with open(self.parser_context.main_file, 'r') as outputfile:
-            for i_line in range(n_lines):
-                try:
-                    line = next(outputfile)
-                except StopIteration:
-                    break
-
+            for line in outputfile:
                 # Look for version
                 result_version = regex_version.match(line)
                 if result_version:

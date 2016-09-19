@@ -42,6 +42,7 @@ class NWChemMainParser(MainHierarchicalParser):
         self.system_cache.add("initial_positions", single=False, update=False)
         self.system_cache.add("atom_positions", single=False, update=True)
         self.system_cache.add("atom_labels", single=False, update=False)
+        self.system_cache.add("configuration_periodic_dimensions", single=False, update=False)
 
         # Cache for storing scc information
         self.scc_cache = CacheService(self.parser_context)
@@ -115,7 +116,6 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def geo_opt_module(self):
         return SM( "                           NWChem Geometry Optimization",
-            fixedStartValues={"electronic_structure_method": "DFT"},
             sections=["section_method", "section_frame_sequence", "section_sampling_method", "x_nwchem_section_geo_opt_module"],
             subFlags=SM.SubFlags.Sequenced,
             subMatchers=[
@@ -166,7 +166,9 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def dft_gaussian_md_task(self):
         return SM( "                                 NWChem QMD Module",
-            fixedStartValues={"electronic_structure_method": "DFT"},
+            fixedStartValues={
+                "electronic_structure_method": "DFT",
+            },
             sections=["section_method", "section_frame_sequence", "section_sampling_method", "x_nwchem_section_qmd_module"],
             subMatchers=[
                 SM("                                QMD Run Parameters",
@@ -189,9 +191,14 @@ class NWChemMainParser(MainHierarchicalParser):
                 ),
                 SM("                                 NWChem DFT Module",
                     repeats=True,
-                    sections=["x_nwchem_section_qmd_step", "section_single_configuration_calculation", "section_system"],
+                    sections=[
+                        "x_nwchem_section_qmd_step",
+                        "section_single_configuration_calculation",
+                        "section_system"
+                    ],
                     onClose={
-                        "section_single_configuration_calculation": self.add_frame_reference
+                        "section_single_configuration_calculation": self.add_frame_reference,
+                        "section_system": self.push_no_periodicity
                     },
                     subMatchers=[
                         SM("  Caching 1-el integrals"),
@@ -266,10 +273,15 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def dft_module(self, on_close_scc=None):
         return SM( "                                 NWChem DFT Module",
-            sections=["section_single_configuration_calculation", "section_system", "section_method"],
+            sections=[
+                "section_single_configuration_calculation",
+                "section_system",
+                "section_method"
+            ],
             fixedStartValues={"electronic_structure_method": "DFT"},
             onClose={
-                "section_single_configuration_calculation": on_close_scc
+                "section_single_configuration_calculation": on_close_scc,
+                "section_system": self.push_no_periodicity
             },
             subMatchers=[
                 SM( r"          No. of atoms     :\s+(?P<number_of_atoms>{})".format(self.regexs.int)),
@@ -477,10 +489,13 @@ class NWChemMainParser(MainHierarchicalParser):
         elif self.system_cache["initial_positions"] is not None:
             self.system_cache.addArrayValues("atom_positions", "initial_positions", unit="angstrom")
         self.system_cache.addArrayValues("atom_labels")
+        self.system_cache.addArrayValues("configuration_periodic_dimensions")
 
     def onClose_section_frame_sequence(self, backend, gIndex, section):
         self.frame_sequence_cache.addValue("number_of_frames_in_sequence")
-        self.frame_sequence_cache.addArrayValues("frame_sequence_local_frames_ref")
+        frame_sequence = np.array(self.frame_sequence_cache["frame_sequence_local_frames_ref"])
+        if frame_sequence.size != 0:
+            self.backend.addArrayValues("frame_sequence_local_frames_ref", frame_sequence)
         self.frame_sequence_cache.addValue("frame_sequence_to_sampling_ref")
 
         potential_energy = np.array(self.frame_sequence_cache["frame_sequence_potential_energy"])
@@ -565,8 +580,8 @@ class NWChemMainParser(MainHierarchicalParser):
                     match = False
                     break
                 components = line.split()
-                position = np.array([float(x) for x in components[2:5]])
-                force = np.array([float(x) for x in components[5:8]])
+                position = np.array([float(x) for x in components[-6:-3]])
+                force = np.array([float(x) for x in components[-3:]])
                 forces.append(force)
                 positions.append(position)
 
@@ -616,6 +631,9 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def add_frame_reference(self, backend, gIndex, section):
         self.frame_sequence_cache["frame_sequence_local_frames_ref"].append(gIndex)
+
+    def push_no_periodicity(self, backend, gIndex, section):
+        self.system_cache["configuration_periodic_dimensions"] = np.array([False, False, False])
 
     #=======================================================================
     # Start match transforms

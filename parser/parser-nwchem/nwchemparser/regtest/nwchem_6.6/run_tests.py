@@ -60,6 +60,10 @@ class TestDFTGaussianEnergy(unittest.TestCase):
         result = self.results["program_name"]
         self.assertEqual(result, "NWChem")
 
+    def test_configuration_periodic_dimensions(self):
+        result = self.results["configuration_periodic_dimensions"]
+        self.assertTrue(np.array_equal(result, np.array([False, False, False])))
+
     def test_program_version(self):
         result = self.results["program_version"]
         self.assertEqual(result, "6.6")
@@ -195,6 +199,10 @@ class TestDFTGaussianForce(unittest.TestCase):
     def setUpClass(cls):
         cls.results = get_results("dft_gaussian/force", "section_run")
 
+    def test_configuration_periodic_dimensions(self):
+        result = self.results["configuration_periodic_dimensions"]
+        self.assertTrue(np.array_equal(result, np.array([False, False, False])))
+
     def test_atom_forces(self):
         result = self.results["atom_forces"]
         expected_result = convert_unit(
@@ -215,6 +223,10 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.results = get_results("dft_gaussian/geo_opt", "section_run")
+
+    def test_configuration_periodic_dimensions(self):
+        result = self.results["configuration_periodic_dimensions"][0]
+        self.assertTrue(np.array_equal(result, np.array([False, False, False])))
 
     def test_frame_sequence(self):
         sequence = self.results["section_frame_sequence"][0]
@@ -381,6 +393,10 @@ class TestDFTGaussianMD(unittest.TestCase):
             ]),
             "K"
         )
+
+    def test_configuration_periodic_dimensions(self):
+        result = self.results["configuration_periodic_dimensions"][0]
+        self.assertTrue(np.array_equal(result, np.array([False, False, False])))
 
     def test_sampling_method(self):
         result = self.results["sampling_method"]
