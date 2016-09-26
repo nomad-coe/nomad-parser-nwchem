@@ -68,6 +68,10 @@ class TestDFTGaussianEnergy(unittest.TestCase):
         result = self.results["program_version"]
         self.assertEqual(result, "6.6")
 
+    def test_xc_functional(self):
+        result = self.results["XC_functional"]
+        self.assertEqual(result, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
+
     def test_atom_labels(self):
         atom_labels = self.results["atom_labels"]
         expected_labels = np.array(["O", "H", "H"])
@@ -203,6 +207,14 @@ class TestDFTGaussianForce(unittest.TestCase):
         result = self.results["configuration_periodic_dimensions"]
         self.assertTrue(np.array_equal(result, np.array([False, False, False])))
 
+    def test_electronic_structure_method(self):
+        result = self.results["electronic_structure_method"]
+        self.assertEqual(result, "DFT")
+
+    def test_xc_functional(self):
+        result = self.results["XC_functional"]
+        self.assertEqual(result, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
+
     def test_atom_forces(self):
         result = self.results["atom_forces"]
         expected_result = convert_unit(
@@ -227,6 +239,14 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
     def test_configuration_periodic_dimensions(self):
         result = self.results["configuration_periodic_dimensions"][0]
         self.assertTrue(np.array_equal(result, np.array([False, False, False])))
+
+    def test_xc_functional(self):
+        result = self.results["XC_functional"]
+        self.assertEqual(result, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
+
+    def test_electronic_structure_method(self):
+        result = self.results["electronic_structure_method"]
+        self.assertEqual(result, "DFT")
 
     def test_frame_sequence(self):
         sequence = self.results["section_frame_sequence"][0]
@@ -355,48 +375,72 @@ class TestDFTGaussianMD(unittest.TestCase):
         )
         cls.kin = convert_unit(
             np.array([
-                0.003270,
-                0.003055,
-                0.001843,
-                0.001541,
-                0.001163,
+                0.001588,
+                0.001316,
+                0.001306,
+                0.000875,
+                0.000360,
             ]),
             "hartree"
         )
         cls.pot = convert_unit(
             np.array([
-                -76.324877,
-                -76.324529,
-                -76.324138,
-                -76.323751,
-                -76.323442,
+                -76.325047,
+                -76.324974,
+                -76.324885,
+                -76.324800,
+                -76.324755,
             ]),
             "hartree"
         )
         cls.cons = convert_unit(
             np.array([
-                -76.321607,
-                -76.321474,
-                -76.322295,
-                -76.322210,
-                -76.322278,
+                -76.323459,
+                -76.323657,
+                -76.323578,
+                -76.323925,
+                -76.324394,
             ]),
             "hartree"
         )
         cls.temp = convert_unit(
             np.array([
-                688.40,
-                643.13,
-                387.93,
-                324.45,
-                244.91,
+                334.35,
+                277.07,
+                275.04,
+                184.29,
+                75.89,
             ]),
             "K"
         )
 
+    def get_system(self, index):
+        scc = self.get_scc(index)
+        system_ref = scc["single_configuration_calculation_to_system_ref"]
+        system = self.results["section_system"][system_ref]
+        return system
+
+    def get_scc(self, index):
+        sample_refs = self.results["frame_sequence_local_frames_ref"]
+        sccs = self.results["section_single_configuration_calculation"]
+        scc = sccs[sample_refs[index]]
+        return scc
+
     def test_configuration_periodic_dimensions(self):
         result = self.results["configuration_periodic_dimensions"][0]
         self.assertTrue(np.array_equal(result, np.array([False, False, False])))
+
+    def test_single_configuration_to_calculation_method(self):
+        result = self.results["single_configuration_to_calculation_method_ref"]
+        self.assertTrue(np.array_equal(result, np.array(6*[0])))
+
+    def test_electronic_structure_method(self):
+        result = self.results["electronic_structure_method"]
+        self.assertEqual(result, "DFT")
+
+    def test_xc_functional(self):
+        result = self.results["XC_functional"]
+        self.assertEqual(result, "1.0*HYB_GGA_XC_PBEH")
 
     def test_sampling_method(self):
         result = self.results["sampling_method"]
@@ -412,7 +456,7 @@ class TestDFTGaussianMD(unittest.TestCase):
 
     def test_frame_sequence_local_frames_ref(self):
         result = self.results["frame_sequence_local_frames_ref"]
-        self.assertTrue(np.array_equal(result, np.array(range(5))))
+        self.assertTrue(np.array_equal(result, np.array(range(1, 6))))
 
     def test_number_of_frames_in_sequence(self):
         result = self.results["number_of_frames_in_sequence"]
@@ -453,47 +497,52 @@ class TestDFTGaussianMD(unittest.TestCase):
         self.assertTrue(np.allclose(result[1], expected_result[1], rtol=0, atol=0.0001))
 
     def test_atom_positions(self):
-        result = self.results["atom_positions"]
+        first_system = self.get_system(0)
+        first_pos = first_system["atom_positions"]
+        last_system = self.get_system(-1)
+        last_pos = last_system["atom_positions"]
         expected_start = convert_unit(
             np.array([
-                [-0.000000, -0.030541, 0.214843],
-                [0.000000, 1.520797, -0.645137],
-                [-0.000000, -1.286347, -1.077605],
+                [-0.000000,  -0.032407,   0.213730],
+                [ 0.000000,   1.547303,  -0.646826],
+                [-0.000000,  -1.283238,  -1.058258],
             ]),
             "bohr"
         )
         expected_end = convert_unit(
             np.array([
-                [-0.000000, -0.027285, 0.217217],
-                [0.000000, 1.483269, -0.644023],
-                [-0.000000, -1.300501, -1.116390],
+                [-0.000000,  -0.034144,   0.212417],
+                [ 0.000000,   1.583695,  -0.644729],
+                [-0.000000,  -1.292061,  -1.039511],
             ]),
             "bohr"
         )
-        self.assertTrue(np.array_equal(result[0, :], expected_start))
-        self.assertTrue(np.array_equal(result[-1, :], expected_end))
+
+        self.assertTrue(np.array_equal(first_pos, expected_start))
+        self.assertTrue(np.array_equal(last_pos, expected_end))
 
     def test_atom_forces(self):
-        result = self.results["atom_forces"]
+        first_force = self.get_scc(0)["atom_forces"]
+        last_force = self.get_scc(-1)["atom_forces"]
         expected_start = convert_unit(
             -np.array([
-                [0.000000, 0.017462, -0.022827],
-                [-0.000000, -0.023895, 0.014570],
-                [0.000000, 0.006434, 0.008257],
+                [ 0.000000,  -0.003686,  -0.024792],
+                [-0.000000,  -0.009261,   0.007954],
+                [ 0.000000,   0.012947,   0.016838],
             ]),
             "forceAu"
         )
         expected_end = convert_unit(
             -np.array([
-                [0.000000, 0.053886, -0.016628],
-                [-0.000000, -0.046371, 0.025550],
-                [-0.000000, -0.007515, -0.008923],
+                [-0.000000,  -0.023297,  -0.023732],
+                [-0.000000,   0.008095,   0.001352],
+                [ 0.000000,   0.015202,   0.022380],
             ]),
             "forceAu"
         )
 
-        self.assertTrue(np.array_equal(result[0, :], expected_start))
-        self.assertTrue(np.array_equal(result[-1, :], expected_end))
+        self.assertTrue(np.array_equal(first_force, expected_start))
+        self.assertTrue(np.array_equal(last_force, expected_end))
 
     # def test_atom_velocities(self):
         # result = self.results["atom_velocities"]
@@ -568,6 +617,129 @@ class TestDFTGaussianXCFunctional(unittest.TestCase):
         xc = get_result("dft_gaussian/functionals/hcth407", "XC_functional")
         self.assertEqual(xc, "1.0*GGA_XC_HCTH_407")
 
+    def test_tpss(self):
+        xc = get_result("dft_gaussian/functionals/tpss", "XC_functional")
+        self.assertEqual(xc, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
+
+
+#===============================================================================
+class TestDFTPWEnergy(unittest.TestCase):
+    """Tests that the parser can handle plane-wave DFT energy calculations.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.results = get_results("dft_pw/energy", "section_run")
+        # cls.results.print_summary()
+
+    def test_program_name(self):
+        result = self.results["program_name"]
+        self.assertEqual(result, "NWChem")
+
+    def test_configuration_periodic_dimensions(self):
+        result = self.results["configuration_periodic_dimensions"][0]
+        self.assertTrue(np.array_equal(result, np.array([True, True, True])))
+
+    def test_program_version(self):
+        result = self.results["program_version"]
+        self.assertEqual(result, "6.6")
+
+    def test_total_charge(self):
+        charge = self.results["total_charge"][0]
+        self.assertEqual(charge, 0)
+
+    def test_electronic_structure_method(self):
+        result = self.results["electronic_structure_method"][0]
+        self.assertEqual(result, "DFT")
+
+    def test_simulation_cell(self):
+        result = self.results["simulation_cell"][0]
+        self.assertTrue(np.array_equal(result, convert_unit(np.array(
+            [
+                [20.0, 0.0, 0.0],
+                [0.0, 20.0, 0.0],
+                [0.0, 0.0, 20.0],
+            ]), "angstrom")
+        ))
+
+    # def test_atom_labels(self):
+        # atom_labels = self.results["atom_labels"]
+        # expected_labels = np.array(["O", "H", "H"])
+        # self.assertTrue(np.array_equal(atom_labels, expected_labels))
+
+    # def test_atom_positions(self):
+        # atom_position = self.results["atom_positions"]
+        # expected_position = convert_unit(np.array(
+            # [
+                # [0.00000000, 0.00000000, -0.11817375],
+                # [0.76924532, 0.00000000, 0.47269501],
+                # [-0.76924532, 0.00000000, 0.47269501],
+            # ]
+        # ), "angstrom")
+        # self.assertTrue(np.array_equal(atom_position, expected_position))
+
+    # def test_number_of_atoms(self):
+        # n_atoms = self.results["number_of_atoms"]
+        # self.assertEqual(n_atoms, 3)
+
+    # def test_energy_total(self):
+        # result = self.results["energy_total"]
+        # expected_result = convert_unit(np.array(-76.436222730188), "hartree")
+        # self.assertTrue(np.array_equal(result, expected_result))
+
+    # def test_energy_x(self):
+        # result = self.results["energy_X"]
+        # expected_result = convert_unit(np.array(-9.025345841743), "hartree")
+        # self.assertTrue(np.array_equal(result, expected_result))
+
+    # def test_energy_c(self):
+        # result = self.results["energy_C"]
+        # expected_result = convert_unit(np.array(-0.328011552453), "hartree")
+        # self.assertTrue(np.array_equal(result, expected_result))
+
+    # def test_energy_total_scf_iteration(self):
+        # result = self.results["energy_total_scf_iteration"]
+        # # Test the first and last energies
+        # expected_result = convert_unit(np.array(
+            # [
+                # [-76.3916403957],
+                # [-76.4362227302],
+            # ]), "hartree")
+        # self.assertTrue(np.array_equal(np.array([[result[0]], [result[-1]]]), expected_result))
+
+    # def test_energy_change_scf_iteration(self):
+        # result = self.results["energy_change_scf_iteration"]
+        # expected_result = convert_unit(np.array(
+            # [
+                # [-8.55E+01],
+                # [-3.82E-07],
+            # ]), "hartree")
+        # self.assertTrue(np.array_equal(np.array([[result[0]], [result[-1]]]), expected_result))
+
+    # def test_scf_max_iteration(self):
+        # result = self.results["scf_max_iteration"]
+        # self.assertEqual(result, 50)
+
+    # def test_scf_threshold_energy_change(self):
+        # result = self.results["scf_threshold_energy_change"]
+        # self.assertEqual(result, convert_unit(1.00E-06, "hartree"))
+
+    # def test_scf_dft_number_of_iterations(self):
+        # result = self.results["number_of_scf_iterations"]
+        # self.assertEqual(result, 6)
+
+    # def test_spin_target_multiplicity(self):
+        # multiplicity = self.results["spin_target_multiplicity"]
+        # self.assertEqual(multiplicity, 1)
+
+    # def test_single_configuration_to_calculation_method_ref(self):
+        # result = self.results["single_configuration_to_calculation_method_ref"]
+        # self.assertEqual(result, 0)
+
+    # def test_single_configuration_calculation_to_system_description_ref(self):
+        # result = self.results["single_configuration_calculation_to_system_ref"]
+        # self.assertEqual(result, 0)
+
 
 #===============================================================================
 if __name__ == '__main__':
@@ -577,6 +749,8 @@ if __name__ == '__main__':
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianGeoOpt))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianXCFunctional))
     suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianMD))
+
+    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTPWEnergy))
 
     alltests = unittest.TestSuite(suites)
     unittest.TextTestRunner(verbosity=0).run(alltests)

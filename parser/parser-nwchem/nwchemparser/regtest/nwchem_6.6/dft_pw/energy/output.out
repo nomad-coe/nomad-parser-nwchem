@@ -64,7 +64,7 @@ task pspw energy
 
     hostname        = lenovo700
     program         = nwchem
-    date            = Mon Sep 12 16:55:56 2016
+    date            = Thu Sep 22 08:48:53 2016
 
     compiled        = Mon_Feb_15_08:24:17_2016
     source          = /build/nwchem-MF0R1k/nwchem-6.6+r27746
@@ -200,7 +200,7 @@ task pspw energy
           *    developed by the group of Prof. John H. Weare *
           *                                                  *
           ****************************************************
-     >>>  JOB STARTED       AT Mon Sep 12 16:55:56 2016  <<<
+     >>>  JOB STARTED       AT Thu Sep 22 08:48:53 2016  <<<
           ================ input data ========================
   library name resolved from: .nwchemrc
   NWCHEM_NWPW_LIBRARY set to: </home/lauri/nwchem-6.6/src/nwpw/libraryps/>
@@ -273,7 +273,7 @@ task pspw energy
 
 
           ============ Grassmann lmbfgs iteration ============
-     >>>  ITERATION STARTED AT Mon Sep 12 16:55:59 2016  <<<
+     >>>  ITERATION STARTED AT Thu Sep 22 08:48:55 2016  <<<
     iter.           Energy         DeltaE       DeltaRho 
     ------------------------------------------------------
      -  15 steepest descent iterations performed
@@ -284,7 +284,7 @@ task pspw energy
       40   -0.2033722532E+02   -0.12138E-05    0.19371E-05
       50   -0.2033722736E+02   -0.91327E-07    0.19252E-07
   *** tolerance ok. iteration terminated
-     >>>  ITERATION ENDED   AT Mon Sep 12 16:56:04 2016  <<<
+     >>>  ITERATION ENDED   AT Thu Sep 22 08:49:00 2016  <<<
 
 
 ==  Summary Of Results  ==
@@ -349,35 +349,35 @@ mu   =  (   -0.0000,   -0.0000,   -0.0001 ) au
 == Timing ==
 
 cputime in seconds
-  prologue    :   0.246928E+01
-  main loop   :   0.554087E+01
-  epilogue    :   0.874305E-02
-  total       :   0.801889E+01
-  cputime/step:   0.436289E-01       (     127 evalulations,      46 linesearches)
+  prologue    :   0.240955E+01
+  main loop   :   0.509009E+01
+  epilogue    :   0.848699E-02
+  total       :   0.750813E+01
+  cputime/step:   0.400795E-01       (     127 evalulations,      46 linesearches)
 
 
 Time spent doing                        total          step       percent
-  total time                 :   0.801902E+01  0.631419E-01       100.0 %
-  i/o time                   :   0.233468E+01  0.183833E-01        29.1 %
-  FFTs                       :   0.220952E+00  0.173978E-02         2.8 %
-  dot products               :   0.255144E+00  0.200901E-02         3.2 %
-  geodesic                   :   0.343504E+00  0.270476E-02         4.3 %
-  ffm_dgemm                  :   0.982336E-01  0.773493E-03         1.2 %
-  fmf_dgemm                  :   0.226185E+00  0.178099E-02         2.8 %
-  m_diagonalize              :   0.225135E-02  0.177272E-04         0.0 %
-  exchange correlation       :   0.197441E+01  0.155465E-01        24.6 %
-  local pseudopotentials     :   0.229120E-03  0.180410E-05         0.0 %
-  non-local pseudopotentials :   0.139970E+00  0.110213E-02         1.7 %
-  hartree potentials         :   0.150010E-01  0.118118E-03         0.2 %
-  ion-ion interaction        :   0.842810E-03  0.663630E-05         0.0 %
-  structure factors          :   0.763263E-02  0.600994E-04         0.1 %
-  phase factors              :   0.100126E-04  0.788392E-07         0.0 %
-  masking and packing        :   0.248325E+00  0.195532E-02         3.1 %
-  queue fft                  :   0.221603E+01  0.174490E-01        27.6 %
-  queue fft (serial)         :   0.132455E+01  0.104295E-01        16.5 %
-  queue fft (message passing):   0.824916E+00  0.649540E-02        10.3 %
+  total time                 :   0.750847E+01  0.591218E-01       100.0 %
+  i/o time                   :   0.229253E+01  0.180515E-01        30.5 %
+  FFTs                       :   0.207814E+00  0.163633E-02         2.8 %
+  dot products               :   0.233923E+00  0.184191E-02         3.1 %
+  geodesic                   :   0.311263E+00  0.245089E-02         4.1 %
+  ffm_dgemm                  :   0.908784E-01  0.715578E-03         1.2 %
+  fmf_dgemm                  :   0.204648E+00  0.161140E-02         2.7 %
+  m_diagonalize              :   0.426002E-02  0.335435E-04         0.1 %
+  exchange correlation       :   0.187728E+01  0.147817E-01        25.0 %
+  local pseudopotentials     :   0.374079E-03  0.294550E-05         0.0 %
+  non-local pseudopotentials :   0.128587E+00  0.101249E-02         1.7 %
+  hartree potentials         :   0.133843E-01  0.105388E-03         0.2 %
+  ion-ion interaction        :   0.805140E-03  0.633968E-05         0.0 %
+  structure factors          :   0.703539E-02  0.553968E-04         0.1 %
+  phase factors              :   0.240793E-04  0.189601E-06         0.0 %
+  masking and packing        :   0.236457E+00  0.186187E-02         3.1 %
+  queue fft                  :   0.202347E+01  0.159329E-01        26.9 %
+  queue fft (serial)         :   0.123700E+01  0.974016E-02        16.5 %
+  queue fft (message passing):   0.731232E+00  0.575774E-02         9.7 %
 
-     >>>  JOB COMPLETED     AT Mon Sep 12 16:56:04 2016  <<<
+     >>>  JOB COMPLETED     AT Thu Sep 22 08:49:00 2016  <<<
           ****************************************************
           *                                                  *
           *               NWPW PSPW Calculation              *
@@ -393,7 +393,7 @@ Time spent doing                        total          step       percent
           *    developed by the group of Prof. John H. Weare *
           *                                                  *
           ****************************************************
-     >>>  JOB STARTED       AT Mon Sep 12 16:56:04 2016  <<<
+     >>>  JOB STARTED       AT Thu Sep 22 08:49:00 2016  <<<
           ================ input data ========================
  pseudopotential is not correctly formatted:S.vpp                                             
 
@@ -491,13 +491,13 @@ converting .... psi:    5 spin: 2
 
 
           ============ Grassmann lmbfgs iteration ============
-     >>>  ITERATION STARTED AT Mon Sep 12 16:56:10 2016  <<<
+     >>>  ITERATION STARTED AT Thu Sep 22 08:49:06 2016  <<<
     iter.           Energy         DeltaE       DeltaRho 
     ------------------------------------------------------
       10   -0.2041356657E+02   -0.48711E-05    0.23682E-02
       20   -0.2041357207E+02   -0.89875E-07    0.41247E-07
   *** tolerance ok. iteration terminated
-     >>>  ITERATION ENDED   AT Mon Sep 12 16:56:15 2016  <<<
+     >>>  ITERATION ENDED   AT Thu Sep 22 08:49:10 2016  <<<
 
 
 ==  Summary Of Results  ==
@@ -562,37 +562,37 @@ mu   =  (   -0.0000,   -0.0000,   -0.0000 ) au
 == Timing ==
 
 cputime in seconds
-  prologue    :   0.585879E+01
-  main loop   :   0.469916E+01
-  epilogue    :   0.233262E-01
-  total       :   0.105813E+02
-  cputime/step:   0.123662E+00       (      38 evalulations,      17 linesearches)
+  prologue    :   0.558673E+01
+  main loop   :   0.424714E+01
+  epilogue    :   0.200338E-01
+  total       :   0.985390E+01
+  cputime/step:   0.111767E+00       (      38 evalulations,      17 linesearches)
 
 
 Time spent doing                        total          step       percent
-  total time                 :   0.105814E+02  0.278458E+00       100.0 %
-  i/o time                   :   0.573585E+01  0.150943E+00        54.2 %
-  FFTs                       :   0.185978E+00  0.489416E-02         1.8 %
-  dot products               :   0.199916E+00  0.526094E-02         1.9 %
-  geodesic                   :   0.313206E+00  0.824226E-02         3.0 %
-  ffm_dgemm                  :   0.723837E-01  0.190483E-02         0.7 %
-  fmf_dgemm                  :   0.239360E+00  0.629896E-02         2.3 %
-  m_diagonalize              :   0.926009E-03  0.243687E-04         0.0 %
-  exchange correlation       :   0.159067E+01  0.418597E-01        15.0 %
-  local pseudopotentials     :   0.682831E-03  0.179692E-04         0.0 %
-  non-local pseudopotentials :   0.127134E+00  0.334563E-02         1.2 %
-  hartree potentials         :   0.130639E-01  0.343787E-03         0.1 %
-  ion-ion interaction        :   0.105786E-02  0.278385E-04         0.0 %
-  structure factors          :   0.669738E-02  0.176247E-03         0.1 %
-  phase factors              :   0.882049E-05  0.232118E-06         0.0 %
-  masking and packing        :   0.213811E+00  0.562660E-02         2.0 %
-  queue fft                  :   0.192422E+01  0.506374E-01        18.2 %
-  queue fft (serial)         :   0.107227E+01  0.282176E-01        10.1 %
-  queue fft (message passing):   0.791364E+00  0.208254E-01         7.5 %
+  total time                 :   0.985406E+01  0.259317E+00       100.0 %
+  i/o time                   :   0.548607E+01  0.144370E+00        55.7 %
+  FFTs                       :   0.166741E+00  0.438793E-02         1.7 %
+  dot products               :   0.178815E+00  0.470566E-02         1.8 %
+  geodesic                   :   0.274660E+00  0.722789E-02         2.8 %
+  ffm_dgemm                  :   0.636101E-01  0.167395E-02         0.6 %
+  fmf_dgemm                  :   0.211718E+00  0.557152E-02         2.1 %
+  m_diagonalize              :   0.691879E-03  0.182073E-04         0.0 %
+  exchange correlation       :   0.148924E+01  0.391906E-01        15.1 %
+  local pseudopotentials     :   0.679016E-03  0.178688E-04         0.0 %
+  non-local pseudopotentials :   0.116550E+00  0.306710E-02         1.2 %
+  hartree potentials         :   0.119827E-01  0.315333E-03         0.1 %
+  ion-ion interaction        :   0.102091E-02  0.268660E-04         0.0 %
+  structure factors          :   0.611088E-02  0.160813E-03         0.1 %
+  phase factors              :   0.240793E-04  0.633665E-06         0.0 %
+  masking and packing        :   0.194830E+00  0.512711E-02         2.0 %
+  queue fft                  :   0.170988E+01  0.449967E-01        17.4 %
+  queue fft (serial)         :   0.963153E+00  0.253461E-01         9.8 %
+  queue fft (message passing):   0.699771E+00  0.184150E-01         7.1 %
 
-     >>>  JOB COMPLETED     AT Mon Sep 12 16:56:15 2016  <<<
+     >>>  JOB COMPLETED     AT Thu Sep 22 08:49:10 2016  <<<
 
- Task  times  cpu:       18.5s     wall:       18.6s
+ Task  times  cpu:       17.3s     wall:       17.4s
  Summary of allocated global arrays
 -----------------------------------
   No active global arrays
@@ -664,4 +664,4 @@ MA usage statistics:
    K. Glaesemann, G. Sandrone, M. Stave, H. Taylor, G. Thomas, J. H. van Lenthe,
                                A. T. Wong, Z. Zhang.
 
- Total times  cpu:       18.5s     wall:       18.6s
+ Total times  cpu:       17.3s     wall:       17.4s
