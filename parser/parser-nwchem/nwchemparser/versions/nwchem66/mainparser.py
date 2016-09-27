@@ -109,7 +109,7 @@ class NWChemMainParser(MainHierarchicalParser):
         return SM( "                                 NWChem DFT Module",
             forwardMatch=True,
             subMatchers=[
-                self.dft_module(),
+                self.dft_calculation_full(),
             ],
 
         )
@@ -161,7 +161,6 @@ class NWChemMainParser(MainHierarchicalParser):
                     ]
                 ),
             ],
-
         )
 
     def geo_opt_module(self):
@@ -192,11 +191,11 @@ class NWChemMainParser(MainHierarchicalParser):
                     sections=["x_nwchem_section_geo_opt_step"],
                     subMatchers=[
                         self.geometry(),
-                        self.dft_module(on_close_scc=self.add_frame_reference),
+                        self.dft_calculation_full(on_close_scc=self.add_frame_reference),
                         SM( "[.@] Step       Energy      Delta E   Gmax     Grms     Xrms     Xmax   Walltime"),
                         SM( "[.@] ---- ---------------- -------- -------- -------- -------- -------- --------"),
                         SM( "@\s+{0}\s+(?P<x_nwchem_geo_opt_step_energy__hartree>{1})\s+{1}\s+{1}\s+{1}\s+{1}\s+{1}\s+{1}".format(self.regexs.int, self.regexs.float)),
-                        self.dft_calculation(),
+                        self.dft_calculation_no_method(),
                     ]
                 ),
                 SM("          Step\s+\d+$",
@@ -206,11 +205,11 @@ class NWChemMainParser(MainHierarchicalParser):
                     subMatchers=[
                         SM("          Step\s+\d+$"),
                         self.geometry(),
-                        self.dft_calculation(on_close_scc=self.add_frame_reference),
+                        self.dft_calculation_no_method(on_close_scc=self.add_frame_reference),
                         SM( "[.@] Step       Energy      Delta E   Gmax     Grms     Xrms     Xmax   Walltime"),
                         SM( "[.@] ---- ---------------- -------- -------- -------- -------- -------- --------"),
                         SM( "@\s+{0}\s+(?P<x_nwchem_geo_opt_step_energy__hartree>{1})\s+{1}\s+{1}\s+{1}\s+{1}\s+{1}\s+{1}".format(self.regexs.int, self.regexs.float)),
-                        self.dft_calculation(),
+                        self.dft_calculation_no_method(),
                     ],
                 ),
                 SM( "\s+Optimization converged",
@@ -226,7 +225,6 @@ class NWChemMainParser(MainHierarchicalParser):
             sections=["section_frame_sequence", "section_sampling_method", "x_nwchem_section_qmd_module"],
             subMatchers=[
                 SM("                                QMD Run Parameters",
-                    # sections=["x_nwchem_section_qmd_run_parameters"],
                     subMatchers=[
                         SM("    No. of nuclear steps:\s+(?P<x_nwchem_qmd_number_of_nuclear_steps>{})".format(self.regexs.int)),
                         SM("       Nuclear time step:\s+(?P<x_nwchem_qmd_nuclear_time_step>{})".format(self.regexs.float)),
@@ -238,7 +236,7 @@ class NWChemMainParser(MainHierarchicalParser):
                         SM("       Current temp. \(K\):\s+(?P<x_nwchem_qmd_initial_temperature__K>{})".format(self.regexs.float)),
                     ]
                 ),
-                self.dft_module(),
+                self.dft_calculation_full(),
                 SM("                                 NWChem DFT Module",
                     repeats=True,
                     sections=[
@@ -321,7 +319,7 @@ class NWChemMainParser(MainHierarchicalParser):
             ]
         )
 
-    def dft_calculation(self, on_close_scc=None):
+    def dft_calculation_no_method(self, on_close_scc=None):
         """SimpleMatcher that ignores DFT method settings but parses actual
         calculation. Used in MD and geo opt, when the settings have not changed
         to avoid storing redundant data.
@@ -335,26 +333,47 @@ class NWChemMainParser(MainHierarchicalParser):
                 "section_single_configuration_calculation": on_close_scc,
                 "section_system": self.push_no_periodicity
             },
-            subMatchers=[
-                SM( r"   convergence    iter        energy       DeltaE   RMS-Dens  Diis-err    time",
-                    subMatchers=[
-                        SM( r" d=\s+{1},ls={0},diis\s+{1}\s+(?P<energy_total_scf_iteration__hartree>{0})\s+(?P<energy_change_scf_iteration__hartree>{0})\s+{0}\s+{0}\s+{0}".format(self.regexs.float, self.regexs.int),
-                            sections=["section_scf_iteration"],
-                            repeats=True,
-                        )
-                    ]
-                ),
-                SM( r"         Total DFT energy =\s+(?P<energy_total__hartree>{})".format(self.regexs.float)),
-                SM( r"      One electron energy =\s+(?P<x_nwchem_energy_one_electron__hartree>{})".format(self.regexs.float)),
-                SM( r"           Coulomb energy =\s+(?P<x_nwchem_energy_coulomb__hartree>{})".format(self.regexs.float)),
-                SM( r"          Exchange energy =\s+(?P<energy_X__hartree>{})".format(self.regexs.float)),
-                SM( r"       Correlation energy =\s+(?P<energy_C__hartree>{})".format(self.regexs.float)),
-                SM( r" Nuclear repulsion energy =\s+(?P<x_nwchem_energy_nuclear_repulsion__hartree>{})".format(self.regexs.float)),
-                self.dft_gradient_module(),
-            ],
+            subMatchers=self.dft_calculation_data(),
         )
 
-    def dft_module(self, on_close_scc=None):
+    def dft_calculation_full(self, on_close_scc=None):
+        subMatchers = [
+            SM( r"          No. of atoms     :\s+(?P<number_of_atoms>{})".format(self.regexs.int)),
+            SM( r"          Charge           :\s+(?P<total_charge>{})".format(self.regexs.int)),
+            SM( r"          Spin multiplicity:\s+(?P<spin_target_multiplicity>{})".format(self.regexs.int)),
+            SM( r"          Maximum number of iterations:\s+(?P<scf_max_iteration>{})".format(self.regexs.int)),
+            SM( r"          Convergence on energy requested:\s+(?P<scf_threshold_energy_change__hartree>{})".format(self.regexs.float)),
+            SM( r"          Convergence on density requested:\s+{}".format(self.regexs.float)),
+            SM( r"          Convergence on gradient requested:\s+{}".format(self.regexs.float)),
+            SM( r"              XC Information",
+                subFlags=SM.SubFlags.Unordered,
+                subMatchers=[
+                    SM("\s+(?P<x_nwchem_xc_functional_shortcut>B3LYP Method XC Potential)"),
+                    SM("\s+(?P<x_nwchem_xc_functional_shortcut>PBE0 Method XC Functional)"),
+                    SM("\s+(?P<x_nwchem_xc_functional_shortcut>Becke half-and-half Method XC Potential)"),
+                    SM("\s+(?P<x_nwchem_xc_functional_shortcut>HCTH120  Method XC Functional)"),
+                    SM("\s+(?P<x_nwchem_xc_functional_shortcut>HCTH147  Method XC Functional)"),
+                    SM("\s+(?P<x_nwchem_xc_functional_shortcut>HCTH407 Method XC Functional)"),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>PerdewBurkeErnzerhof Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Becke 1988 Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Lee-Yang-Parr Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991   Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 LDA Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>PerdewBurkeErnz. Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1981 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1986 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Hartree-Fock \(Exact\) Exchange)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>Slater Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>OPTX     Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>TPSS metaGGA Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>TPSS03 metaGGA Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                ],
+            ),
+        ]
+        subMatchers.extend(self.dft_calculation_data())
+
         return SM( "                                 NWChem DFT Module",
             sections=[
                 "section_single_configuration_calculation",
@@ -366,57 +385,27 @@ class NWChemMainParser(MainHierarchicalParser):
                 "section_single_configuration_calculation": on_close_scc,
                 "section_system": self.push_no_periodicity
             },
-            subMatchers=[
-                SM( r"          No. of atoms     :\s+(?P<number_of_atoms>{})".format(self.regexs.int)),
-                SM( r"          Charge           :\s+(?P<total_charge>{})".format(self.regexs.int)),
-                SM( r"          Spin multiplicity:\s+(?P<spin_target_multiplicity>{})".format(self.regexs.int)),
-                SM( r"          Maximum number of iterations:\s+(?P<scf_max_iteration>{})".format(self.regexs.int)),
-                SM( r"          Convergence on energy requested:\s+(?P<scf_threshold_energy_change__hartree>{})".format(self.regexs.float)),
-                SM( r"          Convergence on density requested:\s+{}".format(self.regexs.float)),
-                SM( r"          Convergence on gradient requested:\s+{}".format(self.regexs.float)),
-                SM( r"              XC Information",
-                    subFlags=SM.SubFlags.Unordered,
-                    subMatchers=[
-                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>B3LYP Method XC Potential)"),
-                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>PBE0 Method XC Functional)"),
-                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>Becke half-and-half Method XC Potential)"),
-                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>HCTH120  Method XC Functional)"),
-                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>HCTH147  Method XC Functional)"),
-                        SM("\s+(?P<x_nwchem_xc_functional_shortcut>HCTH407 Method XC Functional)"),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>PerdewBurkeErnzerhof Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Becke 1988 Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Lee-Yang-Parr Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991   Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 LDA Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>PerdewBurkeErnz. Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1981 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1986 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Perdew 1991 Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Hartree-Fock \(Exact\) Exchange)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>Slater Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>OPTX     Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>TPSS metaGGA Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                        SM("\s+(?P<x_nwchem_xc_functional_name>TPSS03 metaGGA Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
-                    ],
-                ),
-                SM( r"   convergence    iter        energy       DeltaE   RMS-Dens  Diis-err    time",
-                    subMatchers=[
-                        SM( r" d=\s+{1},ls={0},diis\s+{1}\s+(?P<energy_total_scf_iteration__hartree>{0})\s+(?P<energy_change_scf_iteration__hartree>{0})\s+{0}\s+{0}\s+{0}".format(self.regexs.float, self.regexs.int),
-                            sections=["section_scf_iteration"],
-                            repeats=True,
-                        )
-                    ]
-                ),
-                SM( r"         Total DFT energy =\s+(?P<energy_total__hartree>{})".format(self.regexs.float)),
-                SM( r"      One electron energy =\s+(?P<x_nwchem_energy_one_electron__hartree>{})".format(self.regexs.float)),
-                SM( r"           Coulomb energy =\s+(?P<x_nwchem_energy_coulomb__hartree>{})".format(self.regexs.float)),
-                SM( r"          Exchange energy =\s+(?P<energy_X__hartree>{})".format(self.regexs.float)),
-                SM( r"       Correlation energy =\s+(?P<energy_C__hartree>{})".format(self.regexs.float)),
-                SM( r" Nuclear repulsion energy =\s+(?P<x_nwchem_energy_nuclear_repulsion__hartree>{})".format(self.regexs.float)),
-                self.dft_gradient_module(),
-            ],
+            subMatchers=subMatchers,
         )
+
+    def dft_calculation_data(self):
+        return [
+            SM( r"   convergence    iter        energy       DeltaE   RMS-Dens  Diis-err    time",
+                subMatchers=[
+                    SM( r" d=\s+{1},ls={0},diis\s+{1}\s+(?P<energy_total_scf_iteration__hartree>{0})\s+(?P<energy_change_scf_iteration__hartree>{0})\s+{0}\s+{0}\s+{0}".format(self.regexs.float, self.regexs.int),
+                        sections=["section_scf_iteration"],
+                        repeats=True,
+                    )
+                ]
+            ),
+            SM( r"         Total DFT energy =\s+(?P<energy_total__hartree>{})".format(self.regexs.float)),
+            SM( r"      One electron energy =\s+(?P<x_nwchem_energy_one_electron__hartree>{})".format(self.regexs.float)),
+            SM( r"           Coulomb energy =\s+(?P<x_nwchem_energy_coulomb__hartree>{})".format(self.regexs.float)),
+            SM( r"          Exchange energy =\s+(?P<energy_X__hartree>{})".format(self.regexs.float)),
+            SM( r"       Correlation energy =\s+(?P<energy_C__hartree>{})".format(self.regexs.float)),
+            SM( r" Nuclear repulsion energy =\s+(?P<x_nwchem_energy_nuclear_repulsion__hartree>{})".format(self.regexs.float)),
+            self.dft_gradient_module(),
+        ]
 
     def dft_gradient_module(self):
         return SM( r"                            NWChem DFT Gradient Module",
@@ -586,28 +575,33 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def onClose_section_frame_sequence(self, backend, gIndex, section):
         self.frame_sequence_cache.addValue("number_of_frames_in_sequence")
-        frame_sequence = np.array(self.frame_sequence_cache["frame_sequence_local_frames_ref"])
-        if frame_sequence.size != 0:
+        frame_sequence = self.frame_sequence_cache["frame_sequence_local_frames_ref"]
+        if frame_sequence:
+            frame_sequence = np.array(frame_sequence)
             self.backend.addArrayValues("frame_sequence_local_frames_ref", frame_sequence)
         self.frame_sequence_cache.addValue("frame_sequence_to_sampling_ref")
 
-        potential_energy = np.array(self.frame_sequence_cache["frame_sequence_potential_energy"])
-        if potential_energy.size != 0:
+        potential_energy = self.frame_sequence_cache["frame_sequence_potential_energy"]
+        if potential_energy:
+            potential_energy = np.array(potential_energy)
             backend.addArrayValues("frame_sequence_potential_energy", potential_energy)
             backend.addArrayValues("frame_sequence_potential_energy_stats", np.array([potential_energy.mean(), potential_energy.std()]))
 
-        kin_energy = np.array(self.frame_sequence_cache["frame_sequence_kinetic_energy"])
-        if kin_energy.size != 0:
+        kin_energy = self.frame_sequence_cache["frame_sequence_kinetic_energy"]
+        if kin_energy:
+            kin_energy = np.array(kin_energy)
             backend.addArrayValues("frame_sequence_kinetic_energy", kin_energy)
             backend.addArrayValues("frame_sequence_kinetic_energy_stats", np.array([kin_energy.mean(), kin_energy.std()]))
 
-        temp = np.array(self.frame_sequence_cache["frame_sequence_temperature"])
-        if temp.size != 0:
+        temp = self.frame_sequence_cache["frame_sequence_temperature"]
+        if temp:
+            temp = np.array(temp)
             backend.addArrayValues("frame_sequence_temperature", temp)
             backend.addArrayValues("frame_sequence_temperature_stats", np.array([temp.mean(), temp.std()]))
 
-        time = np.array(self.frame_sequence_cache["frame_sequence_time"])
-        if time.size != 0:
+        time = self.frame_sequence_cache["frame_sequence_time"]
+        if time:
+            time = np.array(time)
             backend.addArrayValues("frame_sequence_time", time)
 
         self.frame_sequence_cache.clear()
@@ -619,21 +613,26 @@ class NWChemMainParser(MainHierarchicalParser):
         self.frame_sequence_cache["number_of_frames_in_sequence"] += 1
 
         potential_energy = section.get_latest_value("x_nwchem_qmd_step_potential_energy")
-        self.frame_sequence_cache["frame_sequence_potential_energy"].append(potential_energy)
+        if potential_energy is not None:
+            self.frame_sequence_cache["frame_sequence_potential_energy"].append(potential_energy)
 
         kin_energy = section.get_latest_value("x_nwchem_qmd_step_kinetic_energy")
-        self.frame_sequence_cache["frame_sequence_kinetic_energy"].append(kin_energy)
+        if kin_energy is not None:
+            self.frame_sequence_cache["frame_sequence_kinetic_energy"].append(kin_energy)
 
         temp = section.get_latest_value("x_nwchem_qmd_step_temperature")
-        self.frame_sequence_cache["frame_sequence_temperature"].append(temp)
+        if temp is not None:
+            self.frame_sequence_cache["frame_sequence_temperature"].append(temp)
 
         time = section.get_latest_value("x_nwchem_qmd_step_time")
-        self.frame_sequence_cache["frame_sequence_time"].append(time)
+        if time is not None:
+            self.frame_sequence_cache["frame_sequence_time"].append(time)
 
     def onClose_x_nwchem_section_geo_opt_step(self, backend, gIndex, section):
         self.frame_sequence_cache["number_of_frames_in_sequence"] += 1
         pot_ener = section.get_latest_value("x_nwchem_geo_opt_step_energy")
-        self.frame_sequence_cache["frame_sequence_potential_energy"].append(pot_ener)
+        if pot_ener is not None:
+            self.frame_sequence_cache["frame_sequence_potential_energy"].append(pot_ener)
 
     #=======================================================================
     # onOpen triggers
@@ -722,15 +721,8 @@ class NWChemMainParser(MainHierarchicalParser):
             parser.backend.addArrayValues(metaname, cell, unit=units)
         return wrapper
 
-    def adHoc_lattice_parameters(self):
-        def wrapper(parser):
-            a = [float(x) for x in parser.fIn.readline().split()[2:5]]
-            b = [float(x) for x in parser.fIn.readline().split()[1:4]]
-            c = [float(x) for x in parser.fIn.readline().split()[1:4]]
-
-            cell = np.array([a, b, c])
-            # parser.backend.addArrayValues(metaname, cell, unit=units)
-        return wrapper
+    def adHoc_lattice_parameters(self, parser):
+        pass
 
     #=======================================================================
     # SimpleMatcher specific onClose

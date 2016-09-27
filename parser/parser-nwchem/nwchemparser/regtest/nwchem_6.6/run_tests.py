@@ -339,8 +339,8 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
             ]),
             "hartree/bohr"
         )
-        self.assertEqual(len(result), 4)
         self.assertTrue(np.array_equal(result[-1, :, :], expected_end))
+        self.assertEqual(len(result), 4)
 
     def test_energy_total(self):
         result = self.results["energy_total"]
