@@ -444,7 +444,6 @@ class NWChemMainParser(MainHierarchicalParser):
                 self.name = name
                 self.weight = weight
                 self.locality = locality
-                self.piece = False
 
             def __eq__(self, other):
                 if isinstance(other, self.__class__):
@@ -485,6 +484,8 @@ class NWChemMainParser(MainHierarchicalParser):
                     xc = XCFunctional(name, weight, locality)
                     xc_info[xc.get_key()] = xc
 
+                # Check if a predetermined combination of
+                # x_nwchem_section_xc_parts are found.
                 combinations = {
                     "GGA_X_OPTX": (
                         XCFunctional("OPTX     Exchange Functional", "1.432", "non-local"),
@@ -511,46 +512,49 @@ class NWChemMainParser(MainHierarchicalParser):
 
                     if combination_found:
                         for part in parts:
-                            xc_info[part.get_key()].piece = True
+                            del xc_info[part.get_key()]
                         xc = XCFunctional(name, 1.0)
                         xc_final_list.append(xc)
 
                 # Gather the pieces that were not part of any bigger
                 # combination
                 for xc in xc_info.values():
-                    if not xc.piece:
-                        component_map = {
-                            "PerdewBurkeErnzerhof Exchange Functional": "GGA_X_PBE",
-                            "Becke 1988 Exchange Functional": "GGA_X_B88",
-                            "Lee-Yang-Parr Correlation Functional": "GGA_C_LYP",
-                            "Perdew 1986 Correlation Functional": "GGA_C_P86",
-                            "Perdew 1991 Correlation Functional": "GGA_C_PW91",
-                            "Perdew 1991   Exchange Functional": "GGA_X_PW91",
-                            "Hartree-Fock \(Exact\) Exchange": "HF_X",
-                            "TPSS metaGGA Exchange Functional": "MGGA_X_TPSS",
-                            "TPSS03 metaGGA Correlation Functional": "MGGA_C_TPSS",
-                        }
-                        name = xc.name
-                        locality = xc.locality
-                        weight = xc.weight
-                        norm_name = component_map.get(name)
-                        if norm_name and (locality is None or locality == ""):
+                    component_map = {
+                        "PerdewBurkeErnzerhof Exchange Functional": "GGA_X_PBE",
+                        "Becke 1988 Exchange Functional": "GGA_X_B88",
+                        "Lee-Yang-Parr Correlation Functional": "GGA_C_LYP",
+                        "Perdew 1986 Correlation Functional": "GGA_C_P86",
+                        "Perdew 1991 Correlation Functional": "GGA_C_PW91",
+                        "Perdew 1991   Exchange Functional": "GGA_X_PW91",
+                        "Hartree-Fock \(Exact\) Exchange": "HF_X",
+                        "TPSS metaGGA Exchange Functional": "MGGA_X_TPSS",
+                        "TPSS03 metaGGA Correlation Functional": "MGGA_C_TPSS",
+                    }
+                    name = xc.name
+                    locality = xc.locality
+                    weight = xc.weight
+                    norm_name = component_map.get(name)
+                    if norm_name and (locality is None or locality == ""):
+                        xc = XCFunctional(norm_name, weight)
+                        xc_final_list.append(xc)
 
-                            id_xc = backend.openSection("section_XC_functionals")
-                            backend.addValue("XC_functional_name", norm_name)
-                            if weight is not None:
-                                backend.addValue("XC_functional_weight", weight)
-                            backend.closeSection("section_XC_functionals", id_xc)
-                            xc = XCFunctional(norm_name, weight)
-                            xc_final_list.append(xc)
-
-        # Create the summary string
+        # Go throught the list of found functionals and push XC sections and
+        # gather the summary string.
         xc_final_list.sort(key=lambda x: x.name)
         xc_summary = ""
         for i_xc, xc in enumerate(xc_final_list):
             if i_xc != 0:
                 xc_summary += "+"
             xc_summary += "{}*{}".format(xc.weight, xc.name)
+
+            # Push the XC sections
+            id_xc = backend.openSection("section_XC_functionals")
+            backend.addValue("XC_functional_name", xc.name)
+            if xc.weight is not None:
+                backend.addValue("XC_functional_weight", xc.weight)
+            backend.closeSection("section_XC_functionals", id_xc)
+
+        # Push the summary string
         if xc_summary is not "":
             self.backend.addValue("XC_functional", xc_summary)
 
