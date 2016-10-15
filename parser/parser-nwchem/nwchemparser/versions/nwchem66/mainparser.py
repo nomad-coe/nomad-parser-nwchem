@@ -116,7 +116,6 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def energy_force_pw_task(self):
         return SM( "          \*               NWPW PSPW Calculation              \*",
-            endAction=self.debug_end,
             sections=["section_single_configuration_calculation", "section_system", "section_method"],
             fixedStartValues={
                 "electronic_structure_method": "DFT",
@@ -131,17 +130,17 @@ class NWChemMainParser(MainHierarchicalParser):
                 SM(" options:",
                     subMatchers=[
                         SM("      boundary conditions  =\s+({})".format(self.regexs.word),
-                            startReTransform=self.transform_periodicity
+                            startReAction=self.transform_periodicity
                         ),
                         SM("      electron spin        =\s+(?P<x_nwchem_electron_spin_restriction>{})".format(self.regexs.word),
                         ),
                         SM("      exchange-correlation =\s+({})".format(self.regexs.eol),
-                            startReTransform=self.transform_xc
+                            startReAction=self.transform_xc
                         ),
                     ]
                 ),
                 SM(" total charge:\s+({})".format(self.regexs.float),
-                    startReTransform=self.transform_total_charge,
+                    startReAction=self.transform_total_charge,
                 ),
 
                 SM(" supercell:",
@@ -275,7 +274,7 @@ class NWChemMainParser(MainHierarchicalParser):
                                 SM("  Tot. energy \(a\.u\.\):\s+{}\s+(?P<x_nwchem_qmd_step_total_energy__hartree>{})".format(self.regexs.int, self.regexs.float)),
                                 SM("  Target temp\. \(K\)  :\s+{}\s+(?P<x_nwchem_qmd_step_target_temperature__K>{})".format(self.regexs.int, self.regexs.float)),
                                 SM("  Current temp\. \(K\) :\s+{}\s+(?P<x_nwchem_qmd_step_temperature__K>{})".format(self.regexs.int, self.regexs.float)),
-                                SM("  Dipole \(a\.u\.\)     :\s+{0}\s+({1}\s+{1}\s+{1})".format(self.regexs.int, self.regexs.float), startReTransform=self.transform_dipole)
+                                SM("  Dipole \(a\.u\.\)     :\s+{0}\s+({1}\s+{1}\s+{1})".format(self.regexs.int, self.regexs.float), startReAction=self.transform_dipole)
                             ]
                         )
                     ]
