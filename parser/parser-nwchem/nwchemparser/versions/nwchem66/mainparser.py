@@ -21,6 +21,7 @@ class NWChemMainParser(MainHierarchicalParser):
         # Cache for storing current method settings
         self.method_cache = CacheService(self.parser_context)
         self.method_cache.add("single_configuration_to_calculation_method_ref", single=False, update=False)
+        self.method_cache.add("program_basis_set_type", single=True, update=False)
 
         # Cache for storing current sampling method settings
         self.sampling_method_cache = CacheService(self.parser_context)
@@ -80,7 +81,7 @@ class NWChemMainParser(MainHierarchicalParser):
                     subMatchers=[
                         self.energy_force_gaussian_task(),
                         self.energy_force_pw_task(),
-                        self.geo_opt_module(),
+                        self.gaussian_geo_opt_module(),
                         self.dft_gaussian_md_task(),
                     ]
                 ),
@@ -107,6 +108,7 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def energy_force_gaussian_task(self):
         return SM( "                                 NWChem DFT Module",
+            startReAction=self.set_gaussian_basis,
             forwardMatch=True,
             subMatchers=[
                 self.dft_calculation_full(),
@@ -117,6 +119,7 @@ class NWChemMainParser(MainHierarchicalParser):
     def energy_force_pw_task(self):
         return SM( "          \*               NWPW PSPW Calculation              \*",
             sections=["section_single_configuration_calculation", "section_system", "section_method"],
+            startReAction=self.set_plane_wave_basis,
             fixedStartValues={
                 "electronic_structure_method": "DFT",
             },
@@ -162,8 +165,9 @@ class NWChemMainParser(MainHierarchicalParser):
             ],
         )
 
-    def geo_opt_module(self):
+    def gaussian_geo_opt_module(self):
         return SM( "                           NWChem Geometry Optimization",
+            startReAction=self.set_gaussian_basis,
             sections=["section_frame_sequence", "section_sampling_method", "x_nwchem_section_geo_opt_module"],
             subFlags=SM.SubFlags.Sequenced,
             subMatchers=[
@@ -221,6 +225,7 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def dft_gaussian_md_task(self):
         return SM( "                                 NWChem QMD Module",
+            startReAction=self.set_gaussian_basis,
             sections=["section_frame_sequence", "section_sampling_method", "x_nwchem_section_qmd_module"],
             subMatchers=[
                 SM("                                QMD Run Parameters",
@@ -421,7 +426,8 @@ class NWChemMainParser(MainHierarchicalParser):
     # onClose triggers
     def onClose_section_run(self, backend, gIndex, section):
         backend.addValue("program_name", "NWChem")
-        backend.addValue("program_basis_set_type", "gaussians+plane_waves")
+        self.method_cache.addValue("program_basis_set_type")
+        # backend.addValue("program_basis_set_type", "gaussians+plane_waves")
 
     def onClose_section_single_configuration_calculation(self, backend, gIndex, section):
         self.scc_cache.addValue("single_configuration_calculation_to_system_ref")
@@ -758,6 +764,12 @@ class NWChemMainParser(MainHierarchicalParser):
     def transform_total_charge(self, backend, groups):
         charge = groups[0]
         self.backend.addValue("total_charge", round(float(charge)))
+
+    def set_gaussian_basis(self, backend, groups):
+        self.method_cache["program_basis_set_type"] = "gaussians"
+
+    def set_plane_wave_basis(self, backend, groups):
+        self.method_cache["program_basis_set_type"] = "plane waves"
 
     #=======================================================================
     # Misc

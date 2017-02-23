@@ -68,6 +68,10 @@ class TestDFTGaussianEnergy(unittest.TestCase):
         result = self.results["program_version"]
         self.assertEqual(result, "6.6")
 
+    def test_program_basis_set_type(self):
+        result = self.results["program_basis_set_type"]
+        self.assertEqual(result, "gaussians")
+
     def test_xc_functional(self):
         result = self.results["XC_functional"]
         self.assertEqual(result, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
@@ -207,6 +211,10 @@ class TestDFTGaussianForce(unittest.TestCase):
         result = self.results["configuration_periodic_dimensions"]
         self.assertTrue(np.array_equal(result, np.array([False, False, False])))
 
+    def test_program_basis_set_type(self):
+        result = self.results["program_basis_set_type"]
+        self.assertEqual(result, "gaussians")
+
     def test_electronic_structure_method(self):
         result = self.results["electronic_structure_method"]
         self.assertEqual(result, "DFT")
@@ -235,6 +243,10 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.results = get_results("dft_gaussian/geo_opt", "section_run")
+
+    def test_program_basis_set_type(self):
+        result = self.results["program_basis_set_type"]
+        self.assertEqual(result, "gaussians")
 
     def test_configuration_periodic_dimensions(self):
         result = self.results["configuration_periodic_dimensions"][0]
@@ -413,6 +425,10 @@ class TestDFTGaussianMD(unittest.TestCase):
             ]),
             "K"
         )
+
+    def test_program_basis_set_type(self):
+        result = self.results["program_basis_set_type"]
+        self.assertEqual(result, "gaussians")
 
     def get_system(self, index):
         scc = self.get_scc(index)
@@ -635,6 +651,10 @@ class TestDFTPWEnergy(unittest.TestCase):
     def test_program_name(self):
         result = self.results["program_name"]
         self.assertEqual(result, "NWChem")
+
+    def test_program_basis_set_type(self):
+        result = self.results["program_basis_set_type"]
+        self.assertEqual(result, "plane waves")
 
     def test_configuration_periodic_dimensions(self):
         result = self.results["configuration_periodic_dimensions"][0]
