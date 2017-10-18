@@ -8,7 +8,6 @@ from nomadcore.baseclasses import ParserInterface
 logger = logging.getLogger("nomad")
 
 
-#===============================================================================
 class NWChemParser(ParserInterface):
     """This class handles the initial setup before any parsing can happen. It
     determines which version of NWChem was used to generate the output and then
@@ -17,8 +16,8 @@ class NWChemParser(ParserInterface):
     After the implementation has been setup, you can parse the files with
     parse().
     """
-    def __init__(self, main_file, metainfo_to_keep=None, backend=None, default_units=None, metainfo_units=None, debug=True, log_level=logging.ERROR, store=True):
-        super(NWChemParser, self).__init__(main_file, metainfo_to_keep, backend, default_units, metainfo_units, debug, log_level, store)
+    def __init__(self, metainfo_to_keep=None, backend=None, default_units=None, metainfo_units=None, debug=True, log_level=logging.ERROR, store=True):
+        super(NWChemParser, self).__init__(metainfo_to_keep, backend, default_units, metainfo_units, debug, log_level, store)
 
     def setup_version(self):
         """Setups the version by looking at the output file and the version
@@ -77,4 +76,4 @@ class NWChemParser(ParserInterface):
         except AttributeError:
             logger.exception("A parser class 'NWChemMainParser' could not be found in the module '[]'.".format(parser_module))
             raise
-        self.main_parser = parser_class(self.parser_context.main_file, self.parser_context)
+        self.main_parser = parser_class(self.parser_context)

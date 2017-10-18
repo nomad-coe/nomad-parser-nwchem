@@ -1,15 +1,3 @@
-"""
-This is a module for unit testing the NWChem parser. The unit tests are run with
-a custom backend that outputs the results directly into native python object for
-easier and faster analysis.
-
-Each property that has an enumerable list of different possible options is
-assigned a new test class, that should ideally test through all the options.
-
-The properties that can have non-enumerable values will be tested only for one
-specific case inside a test class that is designed for a certain type of run
-(MD, optimization, QM/MM, etc.)
-"""
 import os
 import unittest
 import logging
@@ -18,42 +6,32 @@ from nwchemparser import NWChemParser
 from nomadcore.unit_conversion.unit_conversion import convert_unit
 
 
-#===============================================================================
-def get_results(folder, metainfo_to_keep=None):
-    """Get the given result from the calculation in the given folder by using
-    the Analyzer in the nomadtoolkit package. Tries to optimize the parsing by
-    giving the metainfo_to_keep argument.
+def get_result(folder, metaname=None):
+    """Get the results from the calculation in the given folder. By default goes through different
 
     Args:
         folder: The folder relative to the directory of this script where the
             parsed calculation resides.
-        metaname: The quantity to extract.
+        metaname(str): Optional quantity to return. If not specified, returns
+            the full dictionary of results.
     """
     dirname = os.path.dirname(__file__)
-    filename = os.path.join(dirname, folder, "output.out")
-    parser = NWChemParser(filename, None, debug=True, log_level=logging.WARNING)
-    results = parser.parse()
-    return results
+    filename = os.path.join("nwchem_{}".format(VERSION), dirname, folder, "output.out")
+    parser = NWChemParser(None, debug=True, log_level=logging.CRITICAL)
+    results = parser.parse(filename)
 
-
-#===============================================================================
-def get_result(folder, metaname, optimize=True):
-    if optimize:
-        results = get_results(folder, None)
+    if metaname is None:
+        return results
     else:
-        results = get_results(folder)
-    result = results[metaname]
-    return result
+        return results[metaname]
 
 
-#===============================================================================
 class TestDFTGaussianEnergy(unittest.TestCase):
     """Tests that the parser can handle DFT energy calculations.
     """
-
     @classmethod
     def setUpClass(cls):
-        cls.results = get_results("dft_gaussian/energy", "section_run")
+        cls.results = get_result("dft_gaussian/energy")
         # cls.results.print_summary()
 
     def test_program_name(self):
@@ -199,13 +177,12 @@ class TestDFTGaussianEnergy(unittest.TestCase):
         # self.assertEqual(cutoff, convert_unit(70.00000, "rydberg"))
 
 
-#===============================================================================
 class TestDFTGaussianForce(unittest.TestCase):
     """Tests that the parser can handle DFT force calculations.
     """
     @classmethod
     def setUpClass(cls):
-        cls.results = get_results("dft_gaussian/force", "section_run")
+        cls.results = get_result("dft_gaussian/force")
 
     def test_configuration_periodic_dimensions(self):
         result = self.results["configuration_periodic_dimensions"]
@@ -236,13 +213,12 @@ class TestDFTGaussianForce(unittest.TestCase):
         self.assertTrue(np.array_equal(result, expected_result))
 
 
-#===============================================================================
 class TestDFTGaussianGeoOpt(unittest.TestCase):
     """Tests that the parser can handle DFT geometry optimizations.
     """
     @classmethod
     def setUpClass(cls):
-        cls.results = get_results("dft_gaussian/geo_opt", "section_run")
+        cls.results = get_result("dft_gaussian/geo_opt")
 
     def test_program_basis_set_type(self):
         result = self.results["program_basis_set_type"]
@@ -370,11 +346,10 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
         self.assertTrue(np.array_equal(result, expected_result))
 
 
-#===============================================================================
 class TestDFTGaussianMD(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.results = get_results("dft_gaussian/md", "section_run")
+        cls.results = get_result("dft_gaussian/md")
         cls.time = convert_unit(
             np.array([
                 0.241888,
@@ -581,7 +556,6 @@ class TestDFTGaussianMD(unittest.TestCase):
         # self.assertTrue(np.array_equal(result[-1, :], expected_end))
 
 
-#===============================================================================
 class TestDFTGaussianXCFunctional(unittest.TestCase):
     """Tests that the XC functionals can be properly parsed.
     """
@@ -638,14 +612,13 @@ class TestDFTGaussianXCFunctional(unittest.TestCase):
         self.assertEqual(xc, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
 
 
-#===============================================================================
 class TestDFTPWEnergy(unittest.TestCase):
     """Tests that the parser can handle plane-wave DFT energy calculations.
     """
 
     @classmethod
     def setUpClass(cls):
-        cls.results = get_results("dft_pw/energy", "section_run")
+        cls.results = get_result("dft_pw/energy")
         # cls.results.print_summary()
 
     def test_program_name(self):
@@ -761,16 +734,17 @@ class TestDFTPWEnergy(unittest.TestCase):
         # self.assertEqual(result, 0)
 
 
-#===============================================================================
 if __name__ == '__main__':
-    suites = []
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianEnergy))
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianForce))
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianGeoOpt))
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianXCFunctional))
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianMD))
 
-    suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTPWEnergy))
+    VERSIONS = ["6.6"]
 
-    alltests = unittest.TestSuite(suites)
-    unittest.TextTestRunner(verbosity=0).run(alltests)
+    for VERSION in VERSIONS:
+        suites = []
+        suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianEnergy))
+        suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianForce))
+        suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianGeoOpt))
+        suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianXCFunctional))
+        suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTGaussianMD))
+        suites.append(unittest.TestLoader().loadTestsFromTestCase(TestDFTPWEnergy))
+        alltests = unittest.TestSuite(suites)
+        unittest.TextTestRunner(verbosity=0).run(alltests)

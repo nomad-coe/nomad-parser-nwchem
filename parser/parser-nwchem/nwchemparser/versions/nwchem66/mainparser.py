@@ -8,15 +8,14 @@ import numpy as np
 LOGGER = logging.getLogger("nomad")
 
 
-#===============================================================================
 class NWChemMainParser(MainHierarchicalParser):
     """The main parser class that is called for all run types. Parses the NWChem
     output file.
     """
-    def __init__(self, file_path, parser_context):
+    def __init__(self, parser_context):
         """
         """
-        super(NWChemMainParser, self).__init__(file_path, parser_context)
+        super(NWChemMainParser, self).__init__(parser_context)
 
         # Cache for storing current method settings
         self.method_cache = CacheService(self.parser_context)
@@ -763,7 +762,7 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def transform_total_charge(self, backend, groups):
         charge = groups[0]
-        self.backend.addValue("total_charge", round(float(charge)))
+        self.backend.addValue("total_charge", int(float(charge)))
 
     def set_gaussian_basis(self, backend, groups):
         self.method_cache["program_basis_set_type"] = "gaussians"
