@@ -611,6 +611,10 @@ class TestDFTGaussianXCFunctional(unittest.TestCase):
         xc = get_result("dft_gaussian/functionals/tpss", "XC_functional")
         self.assertEqual(xc, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
 
+    def test_slater_vwn5(self):
+        xc = get_result("dft_gaussian/functionals/slater_vwn5", "XC_functional")
+        self.assertEqual(xc, "1.0*LDA_C_VWN+1.0*LDA_X")
+
 
 class TestDFTPWEnergy(unittest.TestCase):
     """Tests that the parser can handle plane-wave DFT energy calculations.

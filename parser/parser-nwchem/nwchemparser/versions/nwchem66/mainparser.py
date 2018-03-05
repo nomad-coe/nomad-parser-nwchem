@@ -301,7 +301,7 @@ class NWChemMainParser(MainHierarchicalParser):
     def header(self):
         """Returns the simplematcher that parser the NWChem header
         """
-        return SM( "              Northwest Computational Chemistry Package \(NWChem\) (?P<program_version>{})".format(self.regexs.float),
+        return SM( "\s+Northwest Computational Chemistry Package \(NWChem\) (?P<program_version>(\d+\.\d+(?:\.\d+)?))",
             sections=["x_nwchem_section_start_information"],
             subMatchers=[
                 SM( r"\s+hostname\s+= (?P<x_nwchem_run_host_name>{})".format(self.regexs.eol)),
@@ -372,6 +372,7 @@ class NWChemMainParser(MainHierarchicalParser):
                     SM("\s+(?P<x_nwchem_xc_functional_name>OPTX     Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})\s+(?P<x_nwchem_xc_functional_type>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
                     SM("\s+(?P<x_nwchem_xc_functional_name>TPSS metaGGA Exchange Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
                     SM("\s+(?P<x_nwchem_xc_functional_name>TPSS03 metaGGA Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
+                    SM("\s+(?P<x_nwchem_xc_functional_name>VWN V Correlation Functional)\s+(?P<x_nwchem_xc_functional_weight>{})".format(self.regexs.float, self.regexs.eol), sections=["x_nwchem_section_xc_part"]),
                 ],
             ),
         ]
@@ -533,12 +534,14 @@ class NWChemMainParser(MainHierarchicalParser):
                         "Hartree-Fock \(Exact\) Exchange": "HF_X",
                         "TPSS metaGGA Exchange Functional": "MGGA_X_TPSS",
                         "TPSS03 metaGGA Correlation Functional": "MGGA_C_TPSS",
+                        "Slater Exchange Functional": "LDA_X",
+                        "VWN V Correlation Functional": "LDA_C_VWN",
                     }
                     name = xc.name
                     locality = xc.locality
                     weight = xc.weight
                     norm_name = component_map.get(name)
-                    if norm_name and (locality is None or locality == ""):
+                    if norm_name:
                         xc = XCFunctional(norm_name, weight)
                         xc_final_list.append(xc)
 
