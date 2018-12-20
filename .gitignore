@@ -55,4 +55,4 @@ lib/
 env/
 
 # Egg
-parser/parser-nwchem/nwchemparser.egg-info/
+nwchemparser.egg-info/
