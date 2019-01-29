@@ -33,7 +33,7 @@ class NWChemMainParser(MainHierarchicalParser):
 
         # Cache for storing current method settings
         self.method_cache = CacheService(self.parser_context)
-        self.method_cache.add("single_configuration_to_calculation_method_ref", single=False, update=False)
+        self.method_cache.add("single_configuration_calculation_to_method_ref", single=False, update=False)
         self.method_cache.add("program_basis_set_type", single=True, update=False)
 
         # Cache for storing current sampling method settings
@@ -44,13 +44,10 @@ class NWChemMainParser(MainHierarchicalParser):
         # Cache for storing frame sequence information
         self.frame_sequence_cache = CacheService(self.parser_context)
         self.frame_sequence_cache.add("number_of_frames_in_sequence", 0, single=False, update=True)
-        self.frame_sequence_cache.add("frame_sequence_local_frames_ref", [], single=False, update=True)
-        self.frame_sequence_cache.add("frame_sequence_potential_energy", [], single=False, update=True)
-        self.frame_sequence_cache.add("frame_sequence_kinetic_energy", [], single=False, update=True)
-        self.frame_sequence_cache.add("frame_sequence_temperature", [], single=False, update=True)
+        self.frame_sequence_cache.add("frame_sequence_to_frames_ref", [], single=False, update=True)
         self.frame_sequence_cache.add("frame_sequence_time", [], single=False, update=True)
-        self.frame_sequence_cache.add("frame_sequence_to_sampling_ref", single=False, update=True)
-
+        self.frame_sequence_cache.add("frame_sequence_to_sampling_method_ref", single=False, update=True)
+ 
         # Cache for storing system information
         self.system_cache = CacheService(self.parser_context)
         self.system_cache.add("initial_positions", single=False, update=False)
@@ -257,8 +254,8 @@ class NWChemMainParser(MainHierarchicalParser):
                 SM("                                 NWChem DFT Module",
                     repeats=True,
                     sections=[
-                        "x_nwchem_section_qmd_step",
                         "section_single_configuration_calculation",
+                        "x_nwchem_section_qmd_step",
                         "section_system"
                     ],
                     onClose={
@@ -272,7 +269,7 @@ class NWChemMainParser(MainHierarchicalParser):
                         SM("         Total DFT energy =\s+(?P<energy_total__hartree>{})".format(self.regexs.float)),
                         SM("      One electron energy =\s+(?P<x_nwchem_energy_one_electron__hartree>{})".format(self.regexs.float)),
                         SM("           Coulomb energy =\s+(?P<x_nwchem_energy_coulomb__hartree>{})".format(self.regexs.float)),
-                        SM("    Exchange-Corr\. energy =\s+(?P<energy_XC__hartree>{})".format(self.regexs.float)),
+                        SM("    Exchange-Corr\. energy =\s+(?P<energy_xc__hartree>{})".format(self.regexs.float)),
                         SM(" Nuclear repulsion energy =\s+(?P<x_nwchem_energy_nuclear_repulsion__hartree>{})".format(self.regexs.float)),
                         SM(" Numeric\. integr\. density =\s+{}".format(self.regexs.float)),
                         SM("     Total iterative time =\s+(?P<time_calculation__s>{})".format(self.regexs.float)),
@@ -287,11 +284,11 @@ class NWChemMainParser(MainHierarchicalParser):
                         SM("            QMD Run Information",
                             subMatchers=[
                                 SM("  Time elapsed \(fs\) :\s+(?P<x_nwchem_qmd_step_time__fs>{})".format(self.regexs.float)),
-                                SM("  Kin. energy \(a\.u\.\):\s+{}\s+(?P<x_nwchem_qmd_step_kinetic_energy__hartree>{})".format(self.regexs.int, self.regexs.float)),
-                                SM("  Pot. energy \(a\.u\.\):\s+{}\s+(?P<x_nwchem_qmd_step_potential_energy__hartree>{})".format(self.regexs.int, self.regexs.float)),
+                                SM("  Kin. energy \(a\.u\.\):\s+{}\s+(?P<kinetic_energy__hartree>{})".format(self.regexs.int, self.regexs.float)),
+                                SM("  Pot. energy \(a\.u\.\):\s+{}\s+(?P<potential_energy__hartree>{})".format(self.regexs.int, self.regexs.float)),
                                 SM("  Tot. energy \(a\.u\.\):\s+{}\s+(?P<x_nwchem_qmd_step_total_energy__hartree>{})".format(self.regexs.int, self.regexs.float)),
                                 SM("  Target temp\. \(K\)  :\s+{}\s+(?P<x_nwchem_qmd_step_target_temperature__K>{})".format(self.regexs.int, self.regexs.float)),
-                                SM("  Current temp\. \(K\) :\s+{}\s+(?P<x_nwchem_qmd_step_temperature__K>{})".format(self.regexs.int, self.regexs.float)),
+                                SM("  Current temp\. \(K\) :\s+{}\s+(?P<instant_temperature__K>{})".format(self.regexs.int, self.regexs.float)),
                                 SM("  Dipole \(a\.u\.\)     :\s+{0}\s+({1}\s+{1}\s+{1})".format(self.regexs.int, self.regexs.float), startReAction=self.transform_dipole)
                             ]
                         )
@@ -419,8 +416,8 @@ class NWChemMainParser(MainHierarchicalParser):
             SM( r"         Total DFT energy =\s+(?P<energy_total__hartree>{})".format(self.regexs.float)),
             SM( r"      One electron energy =\s+(?P<x_nwchem_energy_one_electron__hartree>{})".format(self.regexs.float)),
             SM( r"           Coulomb energy =\s+(?P<x_nwchem_energy_coulomb__hartree>{})".format(self.regexs.float)),
-            SM( r"          Exchange energy =\s+(?P<energy_X__hartree>{})".format(self.regexs.float)),
-            SM( r"       Correlation energy =\s+(?P<energy_C__hartree>{})".format(self.regexs.float)),
+            SM( r"          Exchange energy =\s+(?P<energy_x__hartree>{})".format(self.regexs.float)),
+            SM( r"       Correlation energy =\s+(?P<energy_c__hartree>{})".format(self.regexs.float)),
             SM( r" Nuclear repulsion energy =\s+(?P<x_nwchem_energy_nuclear_repulsion__hartree>{})".format(self.regexs.float)),
             self.dft_gradient_module(),
         ]
@@ -445,10 +442,11 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def onClose_section_single_configuration_calculation(self, backend, gIndex, section):
         self.scc_cache.addValue("single_configuration_calculation_to_system_ref")
-        self.method_cache.addValue("single_configuration_to_calculation_method_ref")
-
+        self.method_cache.addValue("single_configuration_calculation_to_method_ref")
         if self.scc_cache["atom_forces"] is not None:
+            fId = backend.openSection("section_atom_forces")
             self.scc_cache.addArrayValues("atom_forces", unit="forceAu")
+            backend.closeSection("section_atom_forces", fId)
 
         if self.scc_cache["number_of_scf_iterations"]:
             self.scc_cache.addValue("number_of_scf_iterations")
@@ -569,15 +567,15 @@ class NWChemMainParser(MainHierarchicalParser):
             xc_summary += "{}*{}".format(xc.weight, xc.name)
 
             # Push the XC sections
-            id_xc = backend.openSection("section_XC_functionals")
-            backend.addValue("XC_functional_name", xc.name)
+            id_xc = backend.openSection("section_xc_functionals")
+            backend.addValue("xc_functional_name", xc.name)
             if xc.weight is not None:
-                backend.addValue("XC_functional_weight", xc.weight)
-            backend.closeSection("section_XC_functionals", id_xc)
+                backend.addValue("xc_functional_weight", xc.weight)
+            backend.closeSection("section_xc_functionals", id_xc)
 
         # Push the summary string
         if xc_summary is not "":
-            self.backend.addValue("XC_functional", xc_summary)
+            self.backend.addValue("xc_functional", xc_summary)
 
     def onClose_section_sampling_method(self, backend, gIndex, section):
 
@@ -600,29 +598,11 @@ class NWChemMainParser(MainHierarchicalParser):
 
     def onClose_section_frame_sequence(self, backend, gIndex, section):
         self.frame_sequence_cache.addValue("number_of_frames_in_sequence")
-        frame_sequence = self.frame_sequence_cache["frame_sequence_local_frames_ref"]
+        frame_sequence = self.frame_sequence_cache["frame_sequence_to_frames_ref"]
         if frame_sequence:
             frame_sequence = np.array(frame_sequence)
-            self.backend.addArrayValues("frame_sequence_local_frames_ref", frame_sequence)
-        self.frame_sequence_cache.addValue("frame_sequence_to_sampling_ref")
-
-        potential_energy = self.frame_sequence_cache["frame_sequence_potential_energy"]
-        if potential_energy:
-            potential_energy = np.array(potential_energy)
-            backend.addArrayValues("frame_sequence_potential_energy", potential_energy)
-            backend.addArrayValues("frame_sequence_potential_energy_stats", np.array([potential_energy.mean(), potential_energy.std()]))
-
-        kin_energy = self.frame_sequence_cache["frame_sequence_kinetic_energy"]
-        if kin_energy:
-            kin_energy = np.array(kin_energy)
-            backend.addArrayValues("frame_sequence_kinetic_energy", kin_energy)
-            backend.addArrayValues("frame_sequence_kinetic_energy_stats", np.array([kin_energy.mean(), kin_energy.std()]))
-
-        temp = self.frame_sequence_cache["frame_sequence_temperature"]
-        if temp:
-            temp = np.array(temp)
-            backend.addArrayValues("frame_sequence_temperature", temp)
-            backend.addArrayValues("frame_sequence_temperature_stats", np.array([temp.mean(), temp.std()]))
+            self.backend.addArrayValues("frame_sequence_to_frames_ref", frame_sequence)
+        self.frame_sequence_cache.addValue("frame_sequence_to_sampling_method_ref")
 
         time = self.frame_sequence_cache["frame_sequence_time"]
         if time:
@@ -637,18 +617,6 @@ class NWChemMainParser(MainHierarchicalParser):
     def onClose_x_nwchem_section_qmd_step(self, backend, gIndex, section):
         self.frame_sequence_cache["number_of_frames_in_sequence"] += 1
 
-        potential_energy = section.get_latest_value("x_nwchem_qmd_step_potential_energy")
-        if potential_energy is not None:
-            self.frame_sequence_cache["frame_sequence_potential_energy"].append(potential_energy)
-
-        kin_energy = section.get_latest_value("x_nwchem_qmd_step_kinetic_energy")
-        if kin_energy is not None:
-            self.frame_sequence_cache["frame_sequence_kinetic_energy"].append(kin_energy)
-
-        temp = section.get_latest_value("x_nwchem_qmd_step_temperature")
-        if temp is not None:
-            self.frame_sequence_cache["frame_sequence_temperature"].append(temp)
-
         time = section.get_latest_value("x_nwchem_qmd_step_time")
         if time is not None:
             self.frame_sequence_cache["frame_sequence_time"].append(time)
@@ -656,19 +624,19 @@ class NWChemMainParser(MainHierarchicalParser):
     def onClose_x_nwchem_section_geo_opt_step(self, backend, gIndex, section):
         self.frame_sequence_cache["number_of_frames_in_sequence"] += 1
         pot_ener = section.get_latest_value("x_nwchem_geo_opt_step_energy")
-        if pot_ener is not None:
-            self.frame_sequence_cache["frame_sequence_potential_energy"].append(pot_ener)
+        # too late to add to section_single_configuration_calculation as potential_energy without reopening it
+        # should open the section_single_configuration_calculation one level higher
 
     #=======================================================================
     # onOpen triggers
     def onOpen_section_method(self, backend, gIndex, section):
-        self.method_cache["single_configuration_to_calculation_method_ref"] = gIndex
+        self.method_cache["single_configuration_calculation_to_method_ref"] = gIndex
 
     def onOpen_section_system(self, backend, gIndex, section):
         self.scc_cache["single_configuration_calculation_to_system_ref"] = gIndex
 
     def onOpen_section_sampling_method(self, backend, gIndex, section):
-        self.frame_sequence_cache["frame_sequence_to_sampling_ref"] = gIndex
+        self.frame_sequence_cache["frame_sequence_to_sampling_method_ref"] = gIndex
 
     def onOpen_x_nwchem_section_qmd_module(self, backend, gIndex, section):
         self.sampling_method_cache["sampling_method"] = "molecular_dynamics"
@@ -752,10 +720,10 @@ class NWChemMainParser(MainHierarchicalParser):
     #=======================================================================
     # SimpleMatcher specific onClose
     def save_geo_opt_sampling_id(self, backend, gIndex, section):
-        backend.addValue("frame_sequence_to_sampling_ref", gIndex)
+        backend.addValue("frame_sequence_to_sampling_method_ref", gIndex)
 
     def add_frame_reference(self, backend, gIndex, section):
-        self.frame_sequence_cache["frame_sequence_local_frames_ref"].append(gIndex)
+        self.frame_sequence_cache["frame_sequence_to_frames_ref"].append(gIndex)
 
     def push_no_periodicity(self, backend, gIndex, section):
         self.system_cache["configuration_periodic_dimensions"] = np.array([False, False, False])

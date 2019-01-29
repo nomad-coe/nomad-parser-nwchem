@@ -65,7 +65,7 @@ class TestDFTGaussianEnergy(unittest.TestCase):
         self.assertEqual(result, "gaussians")
 
     def test_xc_functional(self):
-        result = self.results["XC_functional"]
+        result = self.results["xc_functional"]
         self.assertEqual(result, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
 
     def test_atom_labels(self):
@@ -98,12 +98,12 @@ class TestDFTGaussianEnergy(unittest.TestCase):
         self.assertTrue(np.array_equal(result, expected_result))
 
     def test_energy_x(self):
-        result = self.results["energy_X"]
+        result = self.results["energy_x"]
         expected_result = convert_unit(np.array(-9.025345841743), "hartree")
         self.assertTrue(np.array_equal(result, expected_result))
 
     def test_energy_c(self):
-        result = self.results["energy_C"]
+        result = self.results["energy_c"]
         expected_result = convert_unit(np.array(-0.328011552453), "hartree")
         self.assertTrue(np.array_equal(result, expected_result))
 
@@ -147,7 +147,7 @@ class TestDFTGaussianEnergy(unittest.TestCase):
         self.assertEqual(multiplicity, 1)
 
     def test_single_configuration_to_calculation_method_ref(self):
-        result = self.results["single_configuration_to_calculation_method_ref"]
+        result = self.results["single_configuration_calculation_to_method_ref"]
         self.assertEqual(result, 0)
 
     def test_single_configuration_calculation_to_system_description_ref(self):
@@ -211,7 +211,7 @@ class TestDFTGaussianForce(unittest.TestCase):
         self.assertEqual(result, "DFT")
 
     def test_xc_functional(self):
-        result = self.results["XC_functional"]
+        result = self.results["xc_functional"]
         self.assertEqual(result, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
 
     def test_atom_forces(self):
@@ -243,7 +243,7 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
         self.assertTrue(np.array_equal(result, np.array([False, False, False])))
 
     def test_xc_functional(self):
-        result = self.results["XC_functional"]
+        result = self.results["xc_functional"]
         self.assertEqual(result, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
 
     def test_electronic_structure_method(self):
@@ -254,11 +254,11 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
         sequence = self.results["section_frame_sequence"][0]
 
         # Number of frames
-        n_frames = self.results["number_of_frames_in_sequence"]
+        n_frames = self.results["xxx_to_rm_number_of_frames_in_sequence"]
         self.assertEqual(n_frames, 4)
 
         # Potential energy
-        pot_ener = sequence["frame_sequence_potential_energy"]
+        pot_ener = sequence["potential_energy"]
         expected_pot_ener = convert_unit(
             np.array([
                 -76.42941861,
@@ -290,7 +290,7 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
         self.assertTrue(np.array_equal(np.array([positions[0], positions[-1]]), expected_pos))
 
         # Test labels
-        scc_indices = self.results["frame_sequence_local_frames_ref"]
+        scc_indices = self.results["frame_sequence_to_frames_ref"]
         sccs = self.results["section_single_configuration_calculation"]
         systems = self.results["section_system"]
         labels = []
@@ -351,11 +351,11 @@ class TestDFTGaussianGeoOpt(unittest.TestCase):
         self.assertTrue(np.array_equal(result[0], expected_start))
 
     def test_frame_sequence_to_sampling_ref(self):
-        result = self.results["frame_sequence_to_sampling_ref"]
+        result = self.results["frame_sequence_to_sampling_method_ref"]
         self.assertEqual(result, 0)
 
     def test_frame_sequence_local_frames_ref(self):
-        result = self.results["frame_sequence_local_frames_ref"]
+        result = self.results["frame_sequence_to_frames_ref"]
         expected_result = np.array([0, 2, 4, 6])
         self.assertTrue(np.array_equal(result, expected_result))
 
@@ -426,7 +426,7 @@ class TestDFTGaussianMD(unittest.TestCase):
         return system
 
     def get_scc(self, index):
-        sample_refs = self.results["frame_sequence_local_frames_ref"]
+        sample_refs = self.results["frame_sequence_to_frames_ref"]
         sccs = self.results["section_single_configuration_calculation"]
         scc = sccs[sample_refs[index]]
         return scc
@@ -436,7 +436,7 @@ class TestDFTGaussianMD(unittest.TestCase):
         self.assertTrue(np.array_equal(result, np.array([False, False, False])))
 
     def test_single_configuration_to_calculation_method(self):
-        result = self.results["single_configuration_to_calculation_method_ref"]
+        result = self.results["single_configuration_calculation_to_method_ref"]
         self.assertTrue(np.array_equal(result, np.array(6*[0])))
 
     def test_electronic_structure_method(self):
@@ -444,7 +444,7 @@ class TestDFTGaussianMD(unittest.TestCase):
         self.assertEqual(result, "DFT")
 
     def test_xc_functional(self):
-        result = self.results["XC_functional"]
+        result = self.results["xc_functional"]
         self.assertEqual(result, "1.0*HYB_GGA_XC_PBEH")
 
     def test_sampling_method(self):
@@ -456,27 +456,27 @@ class TestDFTGaussianMD(unittest.TestCase):
         self.assertEqual(result, "NVT")
 
     def test_frame_sequence_to_sampling_ref(self):
-        result = self.results["frame_sequence_to_sampling_ref"]
+        result = self.results["frame_sequence_to_sampling_method_ref"]
         self.assertEqual(result, 0)
 
     def test_frame_sequence_local_frames_ref(self):
-        result = self.results["frame_sequence_local_frames_ref"]
+        result = self.results["frame_sequence_to_frames_ref"]
         self.assertTrue(np.array_equal(result, np.array(range(1, 6))))
 
     def test_number_of_frames_in_sequence(self):
-        result = self.results["number_of_frames_in_sequence"]
+        result = self.results["xxx_to_rm_number_of_frames_in_sequence"]
         self.assertEqual(result, 5)
 
     def test_frame_sequence_potential_energy(self):
-        result = self.results["frame_sequence_potential_energy"]
+        result = self.results["potential_energy"]
         self.assertTrue(np.array_equal(result, self.pot))
 
     def test_frame_sequence_kinetic_energy(self):
-        result = self.results["frame_sequence_kinetic_energy"]
+        result = self.results["kinetic_energy"]
         self.assertTrue(np.array_equal(result, self.kin))
 
     def test_frame_sequence_temperature(self):
-        result = self.results["frame_sequence_temperature"]
+        result = self.results["instant_temperature"]
         self.assertTrue(np.array_equal(result, self.temp))
 
     def test_frame_sequence_time(self):
@@ -574,59 +574,59 @@ class TestDFTGaussianXCFunctional(unittest.TestCase):
     """Tests that the XC functionals can be properly parsed.
     """
     def test_blyp(self):
-        xc = get_result("dft_gaussian/functionals/blyp", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/blyp", "xc_functional")
         self.assertEqual(xc, "1.0*GGA_C_LYP+1.0*GGA_X_B88")
 
     def test_b3lyp(self):
-        xc = get_result("dft_gaussian/functionals/b3lyp", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/b3lyp", "xc_functional")
         self.assertEqual(xc, "1.0*HYB_GGA_XC_B3LYP")
 
     def test_pbe(self):
-        xc = get_result("dft_gaussian/functionals/pbe", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/pbe", "xc_functional")
         self.assertEqual(xc, "1.0*GGA_C_PBE+1.0*GGA_X_PBE")
 
     def test_pbe0(self):
-        xc = get_result("dft_gaussian/functionals/pbe0", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/pbe0", "xc_functional")
         self.assertEqual(xc, "1.0*HYB_GGA_XC_PBEH")
 
     def test_bp86(self):
-        xc = get_result("dft_gaussian/functionals/bp86", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/bp86", "xc_functional")
         self.assertEqual(xc, "1.0*GGA_C_P86+1.0*GGA_X_B88")
 
     def test_bp91(self):
-        xc = get_result("dft_gaussian/functionals/bp91", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/bp91", "xc_functional")
         self.assertEqual(xc, "1.0*GGA_C_PW91+1.0*GGA_X_B88")
 
     def test_pw91(self):
-        xc = get_result("dft_gaussian/functionals/pw91", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/pw91", "xc_functional")
         self.assertEqual(xc, "1.0*GGA_C_PW91+1.0*GGA_X_PW91")
 
     def test_bechehandh(self):
-        xc = get_result("dft_gaussian/functionals/beckehandh", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/beckehandh", "xc_functional")
         self.assertEqual(xc, "1.0*HYB_GGA_XC_BHANDH")
 
     def test_olyp(self):
-        xc = get_result("dft_gaussian/functionals/olyp", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/olyp", "xc_functional")
         self.assertEqual(xc, "1.0*GGA_C_LYP+1.0*GGA_X_OPTX")
 
     def test_hcth120(self):
-        xc = get_result("dft_gaussian/functionals/hcth120", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/hcth120", "xc_functional")
         self.assertEqual(xc, "1.0*GGA_XC_HCTH_120")
 
     def test_hcth147(self):
-        xc = get_result("dft_gaussian/functionals/hcth147", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/hcth147", "xc_functional")
         self.assertEqual(xc, "1.0*GGA_XC_HCTH_147")
 
     def test_hcth407(self):
-        xc = get_result("dft_gaussian/functionals/hcth407", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/hcth407", "xc_functional")
         self.assertEqual(xc, "1.0*GGA_XC_HCTH_407")
 
     def test_tpss(self):
-        xc = get_result("dft_gaussian/functionals/tpss", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/tpss", "xc_functional")
         self.assertEqual(xc, "1.0*MGGA_C_TPSS+1.0*MGGA_X_TPSS")
 
     def test_slater_vwn5(self):
-        xc = get_result("dft_gaussian/functionals/slater_vwn5", "XC_functional")
+        xc = get_result("dft_gaussian/functionals/slater_vwn5", "xc_functional")
         self.assertEqual(xc, "1.0*LDA_C_VWN+1.0*LDA_X")
 
 
@@ -699,12 +699,12 @@ class TestDFTPWEnergy(unittest.TestCase):
         # self.assertTrue(np.array_equal(result, expected_result))
 
     # def test_energy_x(self):
-        # result = self.results["energy_X"]
+        # result = self.results["energy_x"]
         # expected_result = convert_unit(np.array(-9.025345841743), "hartree")
         # self.assertTrue(np.array_equal(result, expected_result))
 
     # def test_energy_c(self):
-        # result = self.results["energy_C"]
+        # result = self.results["energy_c"]
         # expected_result = convert_unit(np.array(-0.328011552453), "hartree")
         # self.assertTrue(np.array_equal(result, expected_result))
 
@@ -744,7 +744,7 @@ class TestDFTPWEnergy(unittest.TestCase):
         # self.assertEqual(multiplicity, 1)
 
     # def test_single_configuration_to_calculation_method_ref(self):
-        # result = self.results["single_configuration_to_calculation_method_ref"]
+        # result = self.results["single_configuration_calculation_to_method_ref"]
         # self.assertEqual(result, 0)
 
     # def test_single_configuration_calculation_to_system_description_ref(self):
