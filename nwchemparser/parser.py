@@ -14,6 +14,8 @@
 
 # from builtins import next
 # from builtins import range
+from builtins import next
+from builtins import range
 import os
 import re
 import logging
@@ -30,20 +32,8 @@ class NWChemParser(ParserInterface):
     After the implementation has been setup, you can parse the files with
     parse().
     """
-    def __init__(
-        self, metainfo_to_keep=None, backend=None, default_units=None,
-        metainfo_units=None, debug=True, logger = None,
-        log_level=logging.ERROR, store=True
-    ):
-        super(NWChemParser, self).__init__(
-            metainfo_to_keep, backend, default_units,
-            metainfo_units, debug, log_level, store
-        )
-        if logger is not None:
-            self.logger = logger
-            self.logger.debug('received logger')
-        else:
-            self.logger = logging.getLogger(__name__)
+    def __init__(self, metainfo_to_keep=None, backend=None, default_units=None, metainfo_units=None, debug=True, log_level=logging.ERROR, store=True):
+        super(NWChemParser, self).__init__(metainfo_to_keep, backend, default_units, metainfo_units, debug, log_level, store)
 
     def setup_version(self):
         """Setups the version by looking at the output file and the version
@@ -62,7 +52,7 @@ class NWChemParser(ParserInterface):
 
         if version_id is None:
             msg = "Could not find a version specification from the given main file."
-            self.logger.exception(msg)
+            logger.exception(msg)
             raise RuntimeError(msg)
 
         # Setup the root folder to the fileservice that is used to access files
@@ -90,16 +80,16 @@ class NWChemParser(ParserInterface):
         try:
             parser_module = importlib.import_module(base)
         except ImportError:
-            self.logger.warning("Could not find a parser for version '{}'. Trying to default to the base implementation for NWChem 6.6".format(version_id))
+            logger.warning("Could not find a parser for version '{}'. Trying to default to the base implementation for NWChem 6.6".format(version_id))
             base = "nwchemparser.versions.nwchem66.mainparser"
             try:
                 parser_module = importlib.import_module(base)
             except ImportError:
-                self.logger.exception("Tried to default to the NWChem 6.6 implementation but could not find the correct module.")
+                logger.exception("Tried to default to the NWChem 6.6 implementation but could not find the correct module.")
                 raise
         try:
             parser_class = getattr(parser_module, "NWChemMainParser")
         except AttributeError:
-            self.logger.exception("A parser class 'NWChemMainParser' could not be found in the module '[]'.".format(parser_module))
+            logger.exception("A parser class 'NWChemMainParser' could not be found in the module '[]'.".format(parser_module))
             raise
         self.main_parser = parser_class(self.parser_context)
