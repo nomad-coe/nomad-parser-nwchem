@@ -1,11 +1,11 @@
 # Copyright 2016-2018 Lauri Himanen, Fawzi Mohamed
-# 
+#
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
 #   You may obtain a copy of the License at
-# 
+#
 #     http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 #   Unless required by applicable law or agreed to in writing, software
 #   distributed under the License is distributed on an "AS IS" BASIS,
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -535,7 +535,7 @@ class TestDFTGaussianMD(unittest.TestCase):
                 [-0.000000,  -0.009261,   0.007954],
                 [ 0.000000,   0.012947,   0.016838],
             ]),
-            "forceAu"
+            "hartree / bohr"
         )
         expected_end = convert_unit(
             -np.array([
@@ -543,7 +543,7 @@ class TestDFTGaussianMD(unittest.TestCase):
                 [-0.000000,   0.008095,   0.001352],
                 [ 0.000000,   0.015202,   0.022380],
             ]),
-            "forceAu"
+            "hartree / bohr"
         )
 
         self.assertTrue(np.array_equal(first_force, expected_start))

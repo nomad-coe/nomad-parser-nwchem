@@ -448,7 +448,7 @@ class NWChemMainParser(MainHierarchicalParser):
         self.method_cache.addValue("single_configuration_to_calculation_method_ref")
 
         if self.scc_cache["atom_forces"] is not None:
-            self.scc_cache.addArrayValues("atom_forces", unit="forceAu")
+            self.scc_cache.addArrayValues("atom_forces", unit="hartree / bohr")
 
         if self.scc_cache["number_of_scf_iterations"]:
             self.scc_cache.addValue("number_of_scf_iterations")
