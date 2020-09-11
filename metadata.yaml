@@ -1,0 +1,7 @@
+codeLabel: NWChem
+codeLabelStyle: 'Capitals: N, W, C'
+codeUrl: https://nwchemgit.github.io/
+parserDirName: dependencies/parsers/nwchem/
+parserGitUrl: https://gitlab.mpcdf.mpg.de/nomad-lab/parser-nwchem
+parserSpecific: ''
+tableOfFiles: ''
