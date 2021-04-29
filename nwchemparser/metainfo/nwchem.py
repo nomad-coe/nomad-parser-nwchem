@@ -230,11 +230,6 @@ class x_nwchem_section_qmd_module(MSection):
 
     m_def = Section(validate=False, a_legacy=LegacyDefinition(name='x_nwchem_section_qmd_module'))
 
-    x_nwchem_section_qmd_step = SubSection(
-        sub_section=SectionProxy('x_nwchem_section_qmd_step'),
-        repeats=True,
-        a_legacy=LegacyDefinition(name='x_nwchem_section_qmd_step'))
-
 
 class x_nwchem_section_qmd_step(MSection):
     '''
@@ -246,6 +241,7 @@ class x_nwchem_section_qmd_step(MSection):
     x_nwchem_qmd_step_time = Quantity(
         type=np.dtype(np.float64),
         shape=[],
+        unit='second',
         description='''
         Elapsed simulation time.
         ''',
@@ -254,6 +250,7 @@ class x_nwchem_section_qmd_step(MSection):
     x_nwchem_qmd_step_kinetic_energy = Quantity(
         type=np.dtype(np.float64),
         shape=[],
+        unit='joule',
         description='''
         Kinetic energy.
         ''',
@@ -262,6 +259,7 @@ class x_nwchem_section_qmd_step(MSection):
     x_nwchem_qmd_step_potential_energy = Quantity(
         type=np.dtype(np.float64),
         shape=[],
+        unit='joule',
         description='''
         Potential energy.
         ''',
@@ -270,6 +268,7 @@ class x_nwchem_section_qmd_step(MSection):
     x_nwchem_qmd_step_total_energy = Quantity(
         type=np.dtype(np.float64),
         shape=[],
+        unit='joule',
         description='''
         Total energy.
         ''',
@@ -278,6 +277,7 @@ class x_nwchem_section_qmd_step(MSection):
     x_nwchem_qmd_step_target_temperature = Quantity(
         type=np.dtype(np.float64),
         shape=[],
+        unit='kelvin',
         description='''
         Target temperature.
         ''',
@@ -286,6 +286,7 @@ class x_nwchem_section_qmd_step(MSection):
     x_nwchem_qmd_step_temperature = Quantity(
         type=np.dtype(np.float64),
         shape=[],
+        unit='kelvin',
         description='''
         Temperature.
         ''',
@@ -379,6 +380,11 @@ class section_single_configuration_calculation(public.section_single_configurati
         The nuclear repulsion energy in a DFT calculation.
         ''',
         a_legacy=LegacyDefinition(name='x_nwchem_energy_nuclear_repulsion'))
+
+    x_nwchem_section_qmd_step = SubSection(
+        sub_section=SectionProxy('x_nwchem_section_qmd_step'),
+        repeats=True,
+        a_legacy=LegacyDefinition(name='x_nwchem_section_qmd_step'))
 
 
 class section_sampling_method(public.section_sampling_method):

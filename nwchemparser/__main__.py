@@ -16,4 +16,17 @@
 # limitations under the License.
 #
 
-from .nwchem_parser import NWChemParser
+import sys
+import json
+import logging
+
+from nomad.utils import configure_logging
+from nomad.datamodel import EntryArchive
+from nwchemparser import NWChemParser
+
+
+if __name__ == "__main__":
+    configure_logging(console_log_level=logging.DEBUG)
+    archive = EntryArchive()
+    NWChemParser().parse(sys.argv[1], archive, logging)
+    json.dump(archive.m_to_dict(), sys.stdout, indent=2)
