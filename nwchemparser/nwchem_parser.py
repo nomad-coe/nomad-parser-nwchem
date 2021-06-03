@@ -25,7 +25,7 @@ from nomad.units import ureg
 from nomad.parsing.parser import FairdiParser
 from nomad.parsing.file_parser import TextParser, Quantity
 from nomad.datamodel.metainfo.common_dft import Run, Method, XCFunctionals, System,\
-    SingleConfigurationCalculation, SamplingMethod, ScfIteration
+    SingleConfigurationCalculation, SamplingMethod, ScfIteration, Energy, Forces
 
 from nwchemparser.metainfo import m_env
 from nwchemparser.metainfo.nwchem import x_nwchem_section_start_information,\
@@ -246,14 +246,14 @@ class NWChemParser(FairdiParser):
             'Maximum number of iterations': 'scf_max_iteration',
             'Convergence on energy requested': 'scf_threshold_energy_change',
             'Total DFT energy': 'energy_total', 'One electron energy': 'x_nwchem_energy_one_electron',
-            'Coulomb energy': 'x_nwchem_energy_coulomb', 'Exchange energy': 'energy_X',
+            'Coulomb energy': 'energy_coulomb', 'Exchange energy': 'energy_X',
             'Exchange-Corr. energy': 'energy_XC',
-            'Correlation energy': 'energy_C', 'Nuclear repulsion energy': 'x_nwchem_energy_nuclear_repulsion',
+            'Correlation energy': 'energy_C', 'Nuclear repulsion energy': 'energy_nuclear_repulsion',
             'total     energy': 'energy_total', 'exc-corr  energy': 'energy_XC',
             # TODO verify if energy contributions mapping is correct
             # 'total orbital energy': 'energy_sum_eigenvalues'
             'hartree   energy': 'energy_correction_hartree',
-            'ion-ion   energy': 'x_nwchem_energy_nuclear_repulsion',
+            'ion-ion   energy': 'energy_nuclear_repulsion',
             'No. of nuclear steps': 'qmd_number_of_nuclear_steps',
             'Nuclear time step': 'qmd_nuclear_time_step',
             'Target temp. (K)': 'qmd_target_temperature', 'Thermostat': 'qmd_thermostat',
@@ -326,18 +326,24 @@ class NWChemParser(FairdiParser):
         for key, val in source.get('energy', dft.get('energy', [])):
             key = self._metainfo_map.get(key)
             if key is not None:
-                setattr(sec_scc, key, val.to('J').magnitude)
+                if key.startswith('x_nwchem_energy_'):
+                    setattr(sec_scc, key, val.to('J').magnitude)
+                else:
+                    sec_scc.m_add_sub_section(getattr(
+                        SingleConfigurationCalculation, key), Energy(value=val))
 
         # for geometry optimization, energy can also be parsed from gradient module
         energy = dft_gradient.get('energy')
         if energy is not None:
-            sec_scc.energy_total = energy[1] * ureg.hartree
+            sec_scc.m_add_sub_section(SingleConfigurationCalculation.energy_total, Energy(
+                value=energy[1] * ureg.hartree))
             sec_scc.time_calculation = energy[-1]
 
         # forces
         forces = dft_gradient.get('labels_positions_forces', dft.get('labels_positions_forces'))
         if forces is not None:
-            sec_scc.atom_forces = forces[2]
+            sec_scc.m_add_sub_section(
+                SingleConfigurationCalculation.forces_total, Forces(value=forces[2]))
 
         # spin
         spin_S2 = source.get('spin_S2')

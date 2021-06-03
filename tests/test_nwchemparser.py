@@ -50,9 +50,9 @@ def test_single_point(parser):
     assert archive.section_run[0].section_sampling_method[0].sampling_method == 'single_point'
 
     sec_scc = archive.section_run[0].section_single_configuration_calculation[0]
-    assert sec_scc.energy_total.magnitude == approx(-3.332424186333889e-16)
+    assert sec_scc.energy_total.value.magnitude == approx(-3.332424186333889e-16)
     assert sec_scc.x_nwchem_energy_one_electron == approx(-5.35955587575652e-16)
-    assert sec_scc.atom_forces[2][0].magnitude == approx(-4.9432341e-13)
+    assert sec_scc.forces_total.value[2][0].magnitude == approx(-4.9432341e-13)
     sec_scfs = sec_scc.section_scf_iteration
     assert len(sec_scfs) == 6
     assert sec_scfs[2].energy_total_scf_iteration.magnitude == approx(-3.33233301e-16)
@@ -74,8 +74,8 @@ def test_geometry_optimization(parser):
 
     sec_sccs = archive.section_run[0].section_single_configuration_calculation
     assert len(sec_sccs) == 4
-    assert sec_sccs[0].energy_C.magnitude == approx(-1.42869721e-18)
-    assert sec_sccs[1].atom_forces[2][2].magnitude == approx(-2.20633015e-10)
+    assert sec_sccs[0].energy_C.value.magnitude == approx(-1.42869721e-18)
+    assert sec_sccs[1].forces_total.value[2][2].magnitude == approx(-2.20633015e-10)
     assert len(sec_sccs[2].section_scf_iteration) == 5
 
     sec_systems = archive.section_run[0].section_system
@@ -89,7 +89,7 @@ def test_molecular_dynamics(parser):
 
     sec_sccs = archive.section_run[0].section_single_configuration_calculation
     assert len(sec_sccs) == 6
-    assert sec_sccs[2].energy_XC.magnitude == approx(-4.04565658e-17)
+    assert sec_sccs[2].energy_XC.value.magnitude == approx(-4.04565658e-17)
     assert sec_sccs[5].x_nwchem_section_qmd_step[0].x_nwchem_qmd_step_total_energy.magnitude == approx(-3.32745352e-16)
     assert sec_sccs[2].x_nwchem_section_qmd_step[0].x_nwchem_qmd_step_dipole[1] == approx(1.141435e-01)
 
@@ -99,7 +99,7 @@ def test_pw(parser):
     parser.parse('tests/data/pw.out', archive, None)
 
     sec_sccs = archive.section_run[0].section_single_configuration_calculation
-    assert sec_sccs[1].energy_total.magnitude == approx(-8.89979631e-17)
+    assert sec_sccs[1].energy_total.value.magnitude == approx(-8.89979631e-17)
     assert sec_sccs[1].spin_S2 == approx(2.0029484134705502)
     sec_scfs = sec_sccs[0].section_scf_iteration
     assert len(sec_scfs) == 5
