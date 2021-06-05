@@ -53,11 +53,11 @@ def test_single_point(parser):
     assert sec_scc.energy_total.value.magnitude == approx(-3.332424186333889e-16)
     assert sec_scc.x_nwchem_energy_one_electron == approx(-5.35955587575652e-16)
     assert sec_scc.forces_total.value[2][0].magnitude == approx(-4.9432341e-13)
-    sec_scfs = sec_scc.section_scf_iteration
+    sec_scfs = sec_scc.scf_iteration
     assert len(sec_scfs) == 6
-    assert sec_scfs[2].energy_total_scf_iteration.magnitude == approx(-3.33233301e-16)
-    assert sec_scfs[5].time_scf_iteration.magnitude == 0.3
-    assert sec_scfs[4].energy_change_scf_iteration.magnitude == approx(-7.45516347e-23)
+    assert sec_scfs[2].energy_total.value.magnitude == approx(-3.33233301e-16)
+    assert sec_scfs[5].time_calculation.magnitude == 0.3
+    assert sec_scfs[4].energy_change.magnitude == approx(-7.45516347e-23)
 
     sec_system = archive.section_run[0].section_system[0]
     assert len(sec_system.atom_labels) == 3
@@ -76,7 +76,7 @@ def test_geometry_optimization(parser):
     assert len(sec_sccs) == 4
     assert sec_sccs[0].energy_C.value.magnitude == approx(-1.42869721e-18)
     assert sec_sccs[1].forces_total.value[2][2].magnitude == approx(-2.20633015e-10)
-    assert len(sec_sccs[2].section_scf_iteration) == 5
+    assert len(sec_sccs[2].scf_iteration) == 5
 
     sec_systems = archive.section_run[0].section_system
     assert sec_systems[0].atom_positions[1][2].magnitude == approx(5.6568542e-11)
@@ -101,6 +101,6 @@ def test_pw(parser):
     sec_sccs = archive.section_run[0].section_single_configuration_calculation
     assert sec_sccs[1].energy_total.value.magnitude == approx(-8.89979631e-17)
     assert sec_sccs[1].spin_S2 == approx(2.0029484134705502)
-    sec_scfs = sec_sccs[0].section_scf_iteration
+    sec_scfs = sec_sccs[0].scf_iteration
     assert len(sec_scfs) == 5
-    assert sec_scfs[3].energy_total_scf_iteration.magnitude == approx(-8.86651108e-17)
+    assert sec_scfs[3].energy_total.value.magnitude == approx(-8.86651108e-17)

@@ -377,10 +377,10 @@ class NWChemParser(FairdiParser):
             for iteration in scf.get('iteration', []):
                 sec_scf = sec_scc.m_create(ScfIteration)
                 iteration = [fix_dfloat(i) if isinstance(i, str) else i for i in iteration]
-                sec_scf.energy_total_scf_iteration = iteration[0] * ureg.hartree
-                sec_scf.energy_change_scf_iteration = iteration[1] * ureg.hartree
+                sec_scf.energy_total = Energy(value=iteration[0] * ureg.hartree)
+                sec_scf.energy_change = iteration[1] * ureg.hartree
                 if len(iteration) > 2:
-                    sec_scf.time_scf_iteration = iteration[2]
+                    sec_scf.time_calculation = iteration[2]
 
         return sec_scc
 
