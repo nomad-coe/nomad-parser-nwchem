@@ -35,61 +35,60 @@ def test_single_point(parser):
     archive = EntryArchive()
     parser.parse('tests/data/single_point.out', archive, None)
 
-    sec_run = archive.section_run[0]
-    assert sec_run.program_basis_set_type == 'gaussians'
-    assert sec_run.program_version == '6.6'
+    sec_run = archive.run[0]
+    assert sec_run.program.version == '6.6'
     assert sec_run.x_nwchem_section_start_information[0].x_nwchem_ga_revision == '10594'
 
-    sec_method = archive.section_run[0].section_method[0]
-    assert sec_method.scf_max_iteration == 50
-    assert sec_method.total_charge == 0
-    assert len(sec_method.section_XC_functionals) == 2
-    assert sec_method.section_XC_functionals[1].XC_functional_name == 'MGGA_C_TPSS'
-    assert sec_method.section_XC_functionals[0].XC_functional_weight == 1.0
+    sec_method = archive.run[0].method[0]
+    assert sec_method.basis_set[0].kind == 'gaussians'
+    assert sec_method.scf.n_max_iteration == 50
+    assert len(sec_method.dft.xc_functional.correlation) == 1
+    assert sec_method.dft.xc_functional.correlation[0].name == 'MGGA_C_TPSS'
+    assert sec_method.dft.xc_functional.exchange[0].weight == 1.0
 
-    assert archive.section_run[0].section_sampling_method[0].sampling_method == 'single_point'
+    assert archive.workflow[0].type == 'single_point'
 
-    sec_scc = archive.section_run[0].section_single_configuration_calculation[0]
-    assert sec_scc.energy_total.value.magnitude == approx(-3.332424186333889e-16)
+    sec_scc = archive.run[0].calculation[0]
+    assert sec_scc.energy.total.value.magnitude == approx(-3.332424186333889e-16)
     assert sec_scc.x_nwchem_energy_one_electron == approx(-5.35955587575652e-16)
-    assert sec_scc.forces_total.value[2][0].magnitude == approx(-4.9432341e-13)
+    assert sec_scc.forces.total.value[2][0].magnitude == approx(-4.9432341e-13)
     sec_scfs = sec_scc.scf_iteration
     assert len(sec_scfs) == 6
-    assert sec_scfs[2].energy_total.value.magnitude == approx(-3.33233301e-16)
+    assert sec_scfs[2].energy.total.value.magnitude == approx(-3.33233301e-16)
     assert sec_scfs[5].time_calculation.magnitude == 0.3
-    assert sec_scfs[4].energy_change.magnitude == approx(-7.45516347e-23)
+    assert sec_scfs[4].energy.change.magnitude == approx(-7.45516347e-23)
 
-    sec_system = archive.section_run[0].section_system[0]
-    assert len(sec_system.atom_labels) == 3
-    assert sec_system.atom_positions[0][2].magnitude == approx(-1.1817375e-11)
+    sec_system = archive.run[0].system[0]
+    assert len(sec_system.atoms.labels) == 3
+    assert sec_system.atoms.positions[0][2].magnitude == approx(-1.1817375e-11)
 
 
 def test_geometry_optimization(parser):
     archive = EntryArchive()
     parser.parse('tests/data/geometry_optimization.out', archive, None)
 
-    sec_methods = archive.section_run[0].section_method
+    sec_methods = archive.run[0].method
     assert len(sec_methods) == 4
-    assert sec_methods[1].scf_threshold_energy_change.magnitude == approx(4.35974472e-24)
+    assert sec_methods[1].scf.threshold_energy_change.magnitude == approx(4.35974472e-24)
 
-    sec_sccs = archive.section_run[0].section_single_configuration_calculation
+    sec_sccs = archive.run[0].calculation
     assert len(sec_sccs) == 4
-    assert sec_sccs[0].energy_C.value.magnitude == approx(-1.42869721e-18)
-    assert sec_sccs[1].forces_total.value[2][2].magnitude == approx(-2.20633015e-10)
+    assert sec_sccs[0].energy.correlation.value.magnitude == approx(-1.42869721e-18)
+    assert sec_sccs[1].forces.total.value[2][2].magnitude == approx(-2.20633015e-10)
     assert len(sec_sccs[2].scf_iteration) == 5
 
-    sec_systems = archive.section_run[0].section_system
-    assert sec_systems[0].atom_positions[1][2].magnitude == approx(5.6568542e-11)
-    assert sec_systems[3].configuration_periodic_dimensions == [False, False, False]
+    sec_systems = archive.run[0].system
+    assert sec_systems[0].atoms.positions[1][2].magnitude == approx(5.6568542e-11)
+    assert sec_systems[3].atoms.periodic == [False, False, False]
 
 
 def test_molecular_dynamics(parser):
     archive = EntryArchive()
     parser.parse('tests/data/molecular_dynamics.out', archive, None)
 
-    sec_sccs = archive.section_run[0].section_single_configuration_calculation
+    sec_sccs = archive.run[0].calculation
     assert len(sec_sccs) == 6
-    assert sec_sccs[2].energy_XC.value.magnitude == approx(-4.04565658e-17)
+    assert sec_sccs[2].energy.xc.value.magnitude == approx(-4.04565658e-17)
     assert sec_sccs[5].x_nwchem_section_qmd_step[0].x_nwchem_qmd_step_total_energy.magnitude == approx(-3.32745352e-16)
     assert sec_sccs[2].x_nwchem_section_qmd_step[0].x_nwchem_qmd_step_dipole[1] == approx(1.141435e-01)
 
@@ -98,9 +97,9 @@ def test_pw(parser):
     archive = EntryArchive()
     parser.parse('tests/data/pw.out', archive, None)
 
-    sec_sccs = archive.section_run[0].section_single_configuration_calculation
-    assert sec_sccs[1].energy_total.value.magnitude == approx(-8.89979631e-17)
+    sec_sccs = archive.run[0].calculation
+    assert sec_sccs[1].energy.total.value.magnitude == approx(-8.89979631e-17)
     assert sec_sccs[1].spin_S2 == approx(2.0029484134705502)
     sec_scfs = sec_sccs[0].scf_iteration
     assert len(sec_scfs) == 5
-    assert sec_scfs[3].energy_total.value.magnitude == approx(-8.86651108e-17)
+    assert sec_scfs[3].energy.total.value.magnitude == approx(-8.86651108e-17)

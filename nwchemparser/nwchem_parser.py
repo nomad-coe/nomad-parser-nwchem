@@ -24,12 +24,20 @@ import re
 from nomad.units import ureg
 from nomad.parsing.parser import FairdiParser
 from nomad.parsing.file_parser import TextParser, Quantity
-from nomad.datamodel.metainfo.common_dft import Run, Method, XCFunctionals, System,\
-    SingleConfigurationCalculation, SamplingMethod, ScfIteration, Energy, Forces
+from nomad.datamodel.metainfo.run.run import Run, Program
+from nomad.datamodel.metainfo.run.method import (
+    Electronic, Method, DFT, MethodReference, XCFunctional, Functional, BasisSet, Scf
+)
+from nomad.datamodel.metainfo.run.system import (
+    System, Atoms, SystemReference
+)
+from nomad.datamodel.metainfo.run.calculation import (
+    Calculation, Energy, EnergyEntry, Forces, ForcesEntry, ScfIteration
+)
+from nomad.datamodel.metainfo.workflow import Workflow, GeometryOptimization, MolecularDynamics
 
-from nwchemparser.metainfo import m_env
-from nwchemparser.metainfo.nwchem import x_nwchem_section_start_information,\
-    x_nwchem_section_qmd_step
+from nwchemparser.metainfo.nwchem import (
+    x_nwchem_section_start_information, x_nwchem_section_qmd_step)
 
 
 def fix_dfloat(val_in):
@@ -233,8 +241,6 @@ class NWChemParser(FairdiParser):
             mainfile_contents_re=(
                 r'Northwest Computational Chemistry Package \(NWChem\) (\d+\.)+\d+'))
 
-        self._metainfo_env = m_env
-
         self.out_parser = OutParser()
 
         self._metainfo_map = {
@@ -246,9 +252,9 @@ class NWChemParser(FairdiParser):
             'Maximum number of iterations': 'scf_max_iteration',
             'Convergence on energy requested': 'scf_threshold_energy_change',
             'Total DFT energy': 'energy_total', 'One electron energy': 'x_nwchem_energy_one_electron',
-            'Coulomb energy': 'energy_coulomb', 'Exchange energy': 'energy_X',
+            'Coulomb energy': 'energy_coulomb', 'Exchange energy': 'energy_exchange',
             'Exchange-Corr. energy': 'energy_XC',
-            'Correlation energy': 'energy_C', 'Nuclear repulsion energy': 'energy_nuclear_repulsion',
+            'Correlation energy': 'energy_correlation', 'Nuclear repulsion energy': 'energy_nuclear_repulsion',
             'total     energy': 'energy_total', 'exc-corr  energy': 'energy_XC',
             # TODO verify if energy contributions mapping is correct
             # 'total orbital energy': 'energy_sum_eigenvalues'
@@ -290,7 +296,7 @@ class NWChemParser(FairdiParser):
         self.out_parser.logger = self.logger
 
     def parse_system(self, source):
-        sec_system = self.archive.section_run[0].m_create(System)
+        sec_system = self.archive.run[0].m_create(System)
 
         labels, positions = source.get('labels_positions', [[], []])
         if len(positions) == 0:
@@ -303,47 +309,47 @@ class NWChemParser(FairdiParser):
         if len(positions) == 0:
             labels, positions = self.out_parser.get('input', {}).get('labels_positions', [[], []])
 
-        sec_system.atom_labels = labels
-        sec_system.atom_positions = positions
+        sec_atoms = sec_system.m_create(Atoms)
+        sec_atoms.labels = labels
+        sec_atoms.positions = positions
 
         lattice_vectors = source.get('lattice_vectors')
         if lattice_vectors is not None:
-            sec_system.lattice_vectors = lattice_vectors
-            sec_system.configuration_periodic_dimensions = [True, True, True]
+            sec_atoms.lattice_vectors = lattice_vectors
+            sec_atoms.periodic = [True, True, True]
         else:
-            sec_system.configuration_periodic_dimensions = [False, False, False]
+            sec_atoms.periodic = [False, False, False]
 
         return sec_system
 
     def parse_scc(self, source):
-        sec_scc = self.archive.section_run[0].m_create(SingleConfigurationCalculation)
+        sec_scc = self.archive.run[0].m_create(Calculation)
 
         # we only read the results from the last dft and gradients module
         dft = source.get('dft', [{}])[-1]
         dft_gradient = source.get('dft_gradient', [{}])[-1]
 
         # energies
+        sec_energy = sec_scc.m_create(Energy)
         for key, val in source.get('energy', dft.get('energy', [])):
             key = self._metainfo_map.get(key)
             if key is not None:
                 if key.startswith('x_nwchem_energy_'):
                     setattr(sec_scc, key, val.to('J').magnitude)
                 else:
-                    sec_scc.m_add_sub_section(getattr(
-                        SingleConfigurationCalculation, key), Energy(value=val))
+                    sec_energy.m_add_sub_section(getattr(
+                        Energy, key.replace('energy_', '').lower()), EnergyEntry(value=val))
 
         # for geometry optimization, energy can also be parsed from gradient module
         energy = dft_gradient.get('energy')
         if energy is not None:
-            sec_scc.m_add_sub_section(SingleConfigurationCalculation.energy_total, Energy(
-                value=energy[1] * ureg.hartree))
+            sec_energy.total = EnergyEntry(value=energy[1] * ureg.hartree)
             sec_scc.time_calculation = energy[-1]
 
         # forces
         forces = dft_gradient.get('labels_positions_forces', dft.get('labels_positions_forces'))
         if forces is not None:
-            sec_scc.m_add_sub_section(
-                SingleConfigurationCalculation.forces_total, Forces(value=forces[2]))
+            sec_scc.forces = Forces(total=ForcesEntry(value=forces[2]))
 
         # spin
         spin_S2 = source.get('spin_S2')
@@ -376,16 +382,17 @@ class NWChemParser(FairdiParser):
         if scf is not None:
             for iteration in scf.get('iteration', []):
                 sec_scf = sec_scc.m_create(ScfIteration)
+                sec_scf_energy = sec_scf.m_create(Energy)
                 iteration = [fix_dfloat(i) if isinstance(i, str) else i for i in iteration]
-                sec_scf.energy_total = Energy(value=iteration[0] * ureg.hartree)
-                sec_scf.energy_change = iteration[1] * ureg.hartree
+                sec_scf_energy.total = EnergyEntry(value=iteration[0] * ureg.hartree)
+                sec_scf_energy.change = iteration[1] * ureg.hartree
                 if len(iteration) > 2:
                     sec_scf.time_calculation = iteration[2]
 
         return sec_scc
 
     def parse_method(self, source):
-        sec_method = self.archive.section_run[0].m_create(Method)
+        sec_method = self.archive.run[0].m_create(Method)
 
         def resolve_functional_combination(functionals):
             names = []
@@ -404,25 +411,40 @@ class NWChemParser(FairdiParser):
                         names.append([name, None])
             return names
 
-        sec_method.electronic_structure_method = 'DFT'
+        sec_dft = sec_method.m_create(DFT)
+        sec_electronic = sec_method.m_create(Electronic)
+        sec_electronic.method = 'DFT'
 
         dft = source.get('dft', [{}])[-1]
 
         general_info = dft.get('general_info', {})
+        sec_scf = sec_method.m_create(Scf)
         for key, val in general_info.get('info', []):
             key = self._metainfo_map.get(key)
             if key is None:
                 continue
             if key == 'scf_threshold_energy_change':
                 val = fix_dfloat(val) * ureg.hartree
-            setattr(sec_method, key, val)
+                sec_scf.threshold_energy_change = val
+            elif key == 'scf_max_iteration':
+                sec_scf.n_max_iteration = val
+            else:
+                setattr(sec_method, key, val)
 
         xc_functionals = dft.get('xc_info', {}).get('functional', [])
+        sec_xc_functional = sec_dft.m_create(XCFunctional)
         for name, weight in resolve_functional_combination(xc_functionals):
-            sec_xc_functional = sec_method.m_create(XCFunctionals)
-            sec_xc_functional.XC_functional_name = name
+            functional = Functional(name=name)
             if weight is not None:
-                sec_xc_functional.XC_functional_weight = weight
+                functional.weight = weight
+            if '_X_' in name or name.endswith('_X'):
+                sec_xc_functional.exchange.append(functional)
+            elif '_C_' in name or name.endswith('_C'):
+                sec_xc_functional.correlation.append(functional)
+            elif 'HYB' in name:
+                sec_xc_functional.hybrid.append(functional)
+            else:
+                sec_xc_functional.contributions.append(functional)
 
         parameters = source.get('parameters', [])
         for parameter in parameters:
@@ -432,7 +454,10 @@ class NWChemParser(FairdiParser):
 
         total_charge = source.get('total_charge')
         if total_charge is not None:
-            sec_method.total_charge = total_charge
+            sec_electronic.charge = total_charge
+
+        sec_basis = sec_method.m_create(BasisSet)
+        sec_basis.kind = 'plane waves' if self.out_parser.get('pw') is not None else 'gaussians'
 
         return sec_method
 
@@ -442,8 +467,8 @@ class NWChemParser(FairdiParser):
             sec_method = self.parse_method(source)
             sec_system = self.parse_system(source)
             sec_scc = self.parse_scc(source)
-            sec_scc.single_configuration_to_calculation_method_ref = sec_method
-            sec_scc.single_configuration_calculation_to_system_ref = sec_system
+            sec_scc.method_ref.append(MethodReference(value=sec_method))
+            sec_scc.system_ref.append(SystemReference(value=sec_system))
 
         if self.out_parser.get('geometry_optimization') is not None:
             for iteration in self.out_parser.get('geometry_optimization').get('iteration', []):
@@ -460,42 +485,44 @@ class NWChemParser(FairdiParser):
         elif self.out_parser.get('single_point') is not None:
             parse_calculation(self.out_parser.get('single_point'))
 
-    def parse_sampling_method(self):
-        sec_sampling = self.archive.section_run[0].m_create(SamplingMethod)
+    def parse_workflow(self):
+        sec_workflow = self.archive.m_create(Workflow)
 
         parameters = []
         if self.out_parser.get('geometry_optimization') is not None:
-            sec_sampling.sampling_method = 'geometry_optimization'
+            sec_workflow.type = 'geometry_optimization'
             parameters = self.out_parser.get('geometry_optimization').get('parameters', [])
 
         elif self.out_parser.get('molecular_dynamics') is not None:
-            sec_sampling.sampling_method = 'molecular_dynamics'
+            sec_workflow.type = 'molecular_dynamics'
             parameters = self.out_parser.get('molecular_dynamics').get('parameters', [])
 
         elif self.out_parser.get('pw') is not None:
             # pw is not fully implemented as I do not have example files
-            sec_sampling.sampling_method = 'geometry_optimization' if len(
+            sec_workflow.type = 'geometry_optimization' if len(
                 self.out_parser.get('pw')) > 1 else 'single_point'
 
         elif self.out_parser.get('single_point') is not None:
-            sec_sampling.sampling_method = 'single_point'
+            sec_workflow.type = 'single_point'
 
+        sec_geometry_opt = sec_workflow.m_create(GeometryOptimization)
+        sec_md = sec_workflow.m_create(MolecularDynamics)
         for parameter in parameters:
             if len(parameter) != 2:
                 continue
             if parameter[0] == 'maximum gradient threshold         (gmax)':
                 val = fix_dfloat(parameter[1]) if isinstance(parameter[1], str) else parameter[1]
-                sec_sampling.geometry_optimization_threshold_force = val * ureg.hartree / ureg.bohr
+                sec_geometry_opt.input_force_maximum_tolerance = val * ureg.hartree / ureg.bohr
             elif parameter[0] == 'maximum cartesian step threshold   (xmax)':
                 val = fix_dfloat(parameter[1]) if isinstance(parameter[1], str) else parameter[1]
-                sec_sampling.geometry_optimization_geometry_change = val * ureg.bohr
+                sec_geometry_opt.input_displacement_maximum_tolerance = val * ureg.bohr
             elif parameter[0] == 'energy precision                  (eprec)':
                 val = fix_dfloat(parameter[1]) if isinstance(parameter[1], str) else parameter[1]
-                sec_sampling.geometry_optimization_energy_change = val * ureg.hartree
+                sec_geometry_opt.input_energy_difference_tolerance = val * ureg.hartree
             else:
                 parameter[0] = self._metainfo_map.get(parameter[0])
                 if parameter[0] is not None:
-                    setattr(sec_sampling, 'x_nwchem_%s' % parameter[0], parameter[1])
+                    setattr(sec_md, 'x_nwchem_%s' % parameter[0], parameter[1])
 
     def parse(self, filepath, archive, logger):
         self.filepath = os.path.abspath(filepath)
@@ -507,9 +534,7 @@ class NWChemParser(FairdiParser):
 
         sec_run = self.archive.m_create(Run)
 
-        sec_run.program_name = 'NWChem'
-        sec_run.program_basis_set_type = 'plane waves' if self.out_parser.get('pw') is not None else 'gaussians'
-        sec_run.program_version = self.out_parser.get('version', '')
+        sec_run.program = Program(name='NWChem', version=self.out_parser.get('version', ''))
 
         # job information
         sec_info = sec_run.m_create(x_nwchem_section_start_information)
@@ -521,4 +546,4 @@ class NWChemParser(FairdiParser):
 
         self.parse_configurations()
 
-        self.parse_sampling_method()
+        self.parse_workflow()
