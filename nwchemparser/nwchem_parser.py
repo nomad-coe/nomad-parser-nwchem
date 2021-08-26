@@ -457,7 +457,7 @@ class NWChemParser(FairdiParser):
             sec_electronic.charge = total_charge
 
         sec_basis = sec_method.m_create(BasisSet)
-        sec_basis.kind = 'plane waves' if self.out_parser.get('pw') is not None else 'gaussians'
+        sec_basis.type = 'plane waves' if self.out_parser.get('pw') is not None else 'gaussians'
 
         return sec_method
 

@@ -26,6 +26,9 @@ from nomad.datamodel.metainfo import run
 from nomad.datamodel.metainfo import workflow
 
 
+m_package = Package()
+
+
 class x_nwchem_section_start_information(MSection):
     '''
     Contains information about the starting conditions for this run
