@@ -24,14 +24,14 @@ import re
 from nomad.units import ureg
 from nomad.parsing.parser import FairdiParser
 from nomad.parsing.file_parser import TextParser, Quantity
-from nomad.datamodel.metainfo.run.run import Run, Program
-from nomad.datamodel.metainfo.run.method import (
-    Electronic, Method, DFT, MethodReference, XCFunctional, Functional, BasisSet, Scf
+from nomad.datamodel.metainfo.simulation.run import Run, Program
+from nomad.datamodel.metainfo.simulation.method import (
+    Electronic, Method, DFT, XCFunctional, Functional, BasisSet, Scf
 )
-from nomad.datamodel.metainfo.run.system import (
-    System, Atoms, SystemReference
+from nomad.datamodel.metainfo.simulation.system import (
+    System, Atoms
 )
-from nomad.datamodel.metainfo.run.calculation import (
+from nomad.datamodel.metainfo.simulation.calculation import (
     Calculation, Energy, EnergyEntry, Forces, ForcesEntry, ScfIteration
 )
 from nomad.datamodel.metainfo.workflow import Workflow, GeometryOptimization, MolecularDynamics
@@ -467,8 +467,8 @@ class NWChemParser(FairdiParser):
             sec_method = self.parse_method(source)
             sec_system = self.parse_system(source)
             sec_scc = self.parse_scc(source)
-            sec_scc.method_ref.append(MethodReference(value=sec_method))
-            sec_scc.system_ref.append(SystemReference(value=sec_system))
+            sec_scc.method_ref = sec_method
+            sec_scc.system_ref = sec_system
 
         if self.out_parser.get('geometry_optimization') is not None:
             for iteration in self.out_parser.get('geometry_optimization').get('iteration', []):
