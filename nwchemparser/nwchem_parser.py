@@ -426,7 +426,7 @@ class NWChemParser(FairdiParser):
             if key == 'scf_threshold_energy_change':
                 val = fix_dfloat(val) * ureg.hartree
                 sec_scf.threshold_energy_change = val
-            elif key == 'scf_max_iteration':
+            elif key == 'scf_max_iteration' and isinstance(val, int):
                 sec_scf.n_max_iteration = val
             else:
                 setattr(sec_method, key, val)
